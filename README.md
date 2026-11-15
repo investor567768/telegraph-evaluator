@@ -15,7 +15,8 @@ A free, no-key truth source that tells Telegraph the correct USD liquidity of a 
 | Inputs | `chain` (for example `ethereum`, `base`, `bsc`, `arbitrum`, `polygon`) and `pool` (pool contract address) |
 | File | [`dexscreener-liquidity.yaml`](dexscreener-liquidity.yaml) |
 | Uploaded | 15 Nov 2026, 14:44 UTC, through the Anjoman Evaluators page |
-| Anjoman response | "Sent. 1 stored, 0 already there, 0 refused." Row state: **Admitted** |
+| Anjoman response | "Sent. 1 stored, 0 already there, 0 refused." Row state: **Eligible** (seen 15 Nov 2026, 16:14 UTC) |
+| Second source | GeckoTerminal public API, [`geckoterminal-liquidity.yaml`](geckoterminal-liquidity.yaml), uploaded 15 Nov 2026, 16:16 UTC, row state **Admitted** |
 
 ## For judges
 Each row answers one line of the Evaluators scoring table in [`CRITERIA.md`](CRITERIA.md).
@@ -42,14 +43,16 @@ https://api.dexscreener.com/latest/dex/pairs/ethereum/0x88e6a0c2ddd26feeb64f039a
 
 ## Honest limits
 - Testnet only. Nothing here is a production or customer claim.
-- The source is admitted, but not yet confirmed as eligible, frozen into a snapshot, or used in a ranking.
+- The DexScreener row is Eligible; the GeckoTerminal row is Admitted. Neither is yet confirmed as frozen into a snapshot or used in a ranking.
+- The organizers confirmed both total liquidity and depth are welcome. Depth at a trade size is not offered here: the Intent takes only `pool` and `chain`, with no trade-size input.
 - The Intent description mentions depth and slippage at a trade size; its only answer field is `liquidity_usd`. This source answers total pool liquidity in USD. This is an open question for the organizers.
 - Tested on large, active pools on one day. Small pools and repeat runs are still to do.
 
 ## Files
 | File | What it is |
 |---|---|
-| [`dexscreener-liquidity.yaml`](dexscreener-liquidity.yaml) | The truth source exactly as uploaded |
+| [`dexscreener-liquidity.yaml`](dexscreener-liquidity.yaml) | Truth source 1, exactly as uploaded |
+| [`geckoterminal-liquidity.yaml`](geckoterminal-liquidity.yaml) | Truth source 2, exactly as uploaded |
 | [`EVIDENCE.md`](EVIDENCE.md) | Method, results and limits of the baseline check |
 | [`liquidity-check-2026-11-15.tsv`](liquidity-check-2026-11-15.tsv) | Raw results of the 20-pool comparison |
 | [`liquidity-compare.html`](liquidity-compare.html) | The browser tool that produced them |

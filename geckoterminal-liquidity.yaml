@@ -1,0 +1,38 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-geckoterminal-pool-liquidity
+name: GeckoTerminal pool liquidity
+description: Free, public, no-key DEX data API by CoinGecko. Returns the USD liquidity (reserve) of one pool on one network.
+base_url: https://api.geckoterminal.com
+auth:
+  type: none
+endpoints:
+- path: /pool-liquidity
+  external_path: /api/v2/networks/{network}/pools/{pool}
+  method: GET
+  description: Current data for one liquidity pool. The answer is at data.attributes.reserve_in_usd, in US dollars (a numeric string).
+  intents:
+  - LIQUIDITY_DEPTH_VERIFY_GENERAL
+  params:
+    path:
+      required:
+      - name: network
+        type: string
+        intents: ['*']
+        description: GeckoTerminal network id in lower case. Use eth for Ethereum, base for Base, bsc for BNB Chain, arbitrum for Arbitrum, polygon_pos for Polygon, solana for Solana.
+      - name: pool
+        type: string
+        intents: ['*']
+        description: Pool contract address on that network, for example 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640.
+intent_mapping:
+  LIQUIDITY_DEPTH_VERIFY_GENERAL:
+    endpoint: /pool-liquidity
+    input:
+      network: { from: chain, how: "GeckoTerminal network id: ethereum -> eth, polygon -> polygon_pos, base -> base, bsc -> bsc, arbitrum -> arbitrum, solana -> solana" }
+      pool: { from: pool, how: pool contract address }
+    output:
+      liquidity_usd: { path: data.attributes.reserve_in_usd }
+semantics:
+  supported_intents:
+  - LIQUIDITY_DEPTH_VERIFY_GENERAL
