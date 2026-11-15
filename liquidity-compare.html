@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liquidity source check</title>
+<style>
+  :root { --bg:#f7f6f2; --fg:#1c1b19; --mut:#6b6860; --line:#dcd9d0; --card:#fff; --acc:#b4472a; --ok:#2f7d4f; --warn:#a86a00; --bad:#b3261e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161513; --fg:#eeece6; --mut:#a09c92; --line:#34322d; --card:#1f1e1b; --acc:#e0714f; --ok:#6cc08c; --warn:#e0a84a; --bad:#ef7a72; } }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:24px 16px 48px; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:1040px; margin:0 auto; }
+  h1 { font-size:24px; margin:0 0 6px; }
+  p { margin:0 0 12px; color:var(--mut); max-width:70ch; }
+  button { font:inherit; font-weight:600; padding:10px 18px; border-radius:8px; border:1px solid var(--acc); background:var(--acc); color:#fff; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--acc); }
+  button:disabled { opacity:.5; cursor:default; }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; align-items:center; }
+  #status { color:var(--mut); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:14px 0; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .stat b { display:block; font-size:22px; font-variant-numeric:tabular-nums; }
+  .stat span { color:var(--mut); font-size:13px; }
+  .wrap { overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:10px; }
+  table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+  th, td { padding:8px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--mut); }
+  td.n, th.n { text-align:right; }
+  tr:last-child td { border-bottom:0; }
+  .ok { color:var(--ok); } .warn { color:var(--warn); } .bad { color:var(--bad); }
+  code { font-size:12px; color:var(--mut); }
+  textarea { width:100%; height:180px; margin-top:14px; font:12px/1.4 ui-monospace, Consolas, monospace; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:10px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Liquidity source check</h1>
+  <p>Compares the USD liquidity reported by DexScreener (our truth source) with GeckoTerminal (an independent second source) for the same pools, at the same moment. Both are free public APIs with no key.</p>
+  <div class="bar">
+    <button id="run">Run the check</button>
+    <button id="copy" class="ghost" disabled>Copy results</button>
+    <span id="status">Not run yet.</span>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="wrap"><table>
+    <thead><tr><th>Chain</th><th>Pool</th><th>Address</th><th class="n">DexScreener USD</th><th class="n">GeckoTerminal USD</th><th class="n">Difference</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="6" style="color:var(--mut)">Click "Run the check".</td></tr></tbody>
+  </table></div>
+  <textarea id="out" readonly placeholder="Results text appears here after the run. Copy all of it and paste it to Claude."></textarea>
+</main>
+<script>
+const NETS = [
+  { gt: 'eth', ds: 'ethereum' },
+  { gt: 'base', ds: 'base' },
+  { gt: 'bsc', ds: 'bsc' },
+  { gt: 'arbitrum', ds: 'arbitrum' },
+  { gt: 'polygon_pos', ds: 'polygon' }
+];
+const PER_NET = 4;
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const usd = v => v == null ? 'not found' : '$' + Math.round(v).toLocaleString('en-US');
+let results = [], notes = [];
+
+async function getJson(url) {
+  const r = await fetch(url, { headers: { accept: 'application/json' } });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' from ' + new URL(url).host);
+  return r.json();
+}
+
+async function run() {
+  $('run').disabled = true; $('copy').disabled = true;
+  results = []; notes = [];
+  $('rows').innerHTML = ''; $('stats').innerHTML = ''; $('out').value = '';
+  const started = new Date().toISOString();
+  for (const net of NETS) {
+    $('status').textContent = 'Checking ' + net.ds + '...';
+    try {
+      const gt = await getJson('https://api.geckoterminal.com/api/v2/networks/' + net.gt + '/pools?page=1');
+      const pools = (gt.data || []).slice(0, PER_NET).map(p => ({
+        chain: net.ds,
+        address: String(p.attributes.address).toLowerCase(),
+        name: p.attributes.name,
+        gt: parseFloat(p.attributes.reserve_in_usd)
+      }));
+      if (!pools.length) { notes.push(net.ds + ': GeckoTerminal returned no pools'); continue; }
+      const ds = await getJson('https://api.dexscreener.com/latest/dex/pairs/' + net.ds + '/' + pools.map(p => p.address).join(','));
+      const byAddr = {};
+      for (const p of (ds.pairs || [])) byAddr[String(p.pairAddress).toLowerCase()] = p;
+      for (const p of pools) {
+        const hit = byAddr[p.address];
+        p.ds = hit && hit.liquidity && typeof hit.liquidity.usd === 'number' ? hit.liquidity.usd : null;
+        p.diff = (p.ds != null && p.gt > 0) ? (p.ds - p.gt) / p.gt * 100 : null;
+        results.push(p); addRow(p);
+      }
+    } catch (e) {
+      notes.push(net.ds + ': ' + e.message);
+    }
+    await sleep(1500);
+  }
+  finish(started);
+}
+
+function cls(d) { const a = Math.abs(d); return a <= 2 ? 'ok' : a <= 10 ? 'warn' : 'bad'; }
+
+function addRow(p) {
+  const tr = document.createElement('tr');
+  const cells = [p.chain, p.name, p.address, usd(p.ds), usd(p.gt), p.diff == null ? 'n/a' : (p.diff >= 0 ? '+' : '') + p.diff.toFixed(2) + '%'];
+  cells.forEach((c, i) => {
+    const td = document.createElement('td');
+    if (i === 2) { const k = document.createElement('code'); k.textContent = c; td.appendChild(k); }
+    else td.textContent = c;
+    if (i >= 3) td.className = 'n';
+    if (i === 5 && p.diff != null) td.className = 'n ' + cls(p.diff);
+    tr.appendChild(td);
+  });
+  $('rows').appendChild(tr);
+}
+
+function finish(started) {
+  const both = results.filter(r => r.diff != null);
+  const abs = both.map(r => Math.abs(r.diff)).sort((a, b) => a - b);
+  const median = abs.length ? (abs.length % 2 ? abs[(abs.length - 1) / 2] : (abs[abs.length / 2 - 1] + abs[abs.length / 2]) / 2) : null;
+  const within = t => abs.filter(a => a <= t).length;
+  const stats = [
+    [results.length, 'pools checked'],
+    [both.length, 'found in both sources'],
+    [median == null ? 'n/a' : median.toFixed(2) + '%', 'median difference'],
+    [within(2) + ' / ' + both.length, 'within 2%'],
+    [within(10) + ' / ' + both.length, 'within 10%']
+  ];
+  $('stats').innerHTML = '';
+  for (const [v, l] of stats) {
+    const d = document.createElement('div'); d.className = 'stat';
+    const b = document.createElement('b'); b.textContent = v;
+    const s = document.createElement('span'); s.textContent = l;
+    d.append(b, s); $('stats').appendChild(d);
+  }
+  if (!results.length) $('rows').innerHTML = '<tr><td colspan="6">No results. See the notes in the box below.</td></tr>';
+  const lines = [
+    'LIQUIDITY SOURCE CHECK',
+    'run_at_utc: ' + started,
+    'pools_checked: ' + results.length + ' | in_both: ' + both.length + ' | median_abs_diff_pct: ' + (median == null ? 'n/a' : median.toFixed(3)) + ' | within_2pct: ' + within(2) + ' | within_10pct: ' + within(10),
+    'chain\tpool\taddress\tdexscreener_usd\tgeckoterminal_usd\tdiff_pct'
+  ];
+  for (const r of results) lines.push([r.chain, r.name, r.address, r.ds == null ? 'not_found' : r.ds, r.gt, r.diff == null ? 'n/a' : r.diff.toFixed(3)].join('\t'));
+  if (notes.length) lines.push('notes: ' + notes.join(' ; '));
+  $('out').value = lines.join('\n');
+  $('status').textContent = results.length ? 'Done. Click "Copy results" and paste them to Claude.' : 'Could not reach the sources. Copy the text in the box and paste it to Claude.';
+  $('copy').disabled = false; $('run').disabled = false;
+}
+
+$('run').onclick = run;
+$('copy').onclick = async () => {
+  const t = $('out').value;
+  try { await navigator.clipboard.writeText(t); $('status').textContent = 'Copied. Paste it to Claude.'; }
+  catch (e) { $('out').focus(); $('out').select(); $('status').textContent = 'Press Ctrl+C to copy the selected text.'; }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-dexscreener-pool-liquidity
+name: DexScreener pool liquidity
+description: Free, public, no-key DEX data API. Returns the USD liquidity of one pool on one chain.
+base_url: https://api.dexscreener.com
+auth:
+  type: none
+endpoints:
+- path: /pool-liquidity
+  external_path: /latest/dex/pairs/{chain}/{pool}
+  method: GET
+  description: Current data for one liquidity pool. The answer is at pairs.0.liquidity.usd, in US dollars.
+  intents:
+  - LIQUIDITY_DEPTH_VERIFY_GENERAL
+  params:
+    path:
+      required:
+      - name: chain
+        type: string
+        intents: ['*']
+        description: Chain slug in lower case as DexScreener names it, for example ethereum, base, bsc, arbitrum, polygon, solana.
+      - name: pool
+        type: string
+        intents: ['*']
+        description: Pool (pair) contract address on that chain, for example 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640.
+intent_mapping:
+  LIQUIDITY_DEPTH_VERIFY_GENERAL:
+    endpoint: /pool-liquidity
+    input:
+      chain: { from: chain, how: lower-case DexScreener chain slug }
+      pool: { from: pool, how: pool contract address }
+    output:
+      liquidity_usd: { path: pairs.0.liquidity.usd }
+semantics:
+  supported_intents:
+  - LIQUIDITY_DEPTH_VERIFY_GENERAL
