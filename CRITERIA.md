@@ -39,8 +39,65 @@ Source: user screenshot of Section 6, Evaluators tab, 15 Nov 2026.
 | Documentation and integration clarity | 5 |
 | Organic growth, education, and developer activation | 20 |
 
-## Scoring: Miners/Providers track
-Not yet captured (Section 6, Miners / Providers tab).
+## Miners/Providers track
+Source: user screenshots of Sections 5, 6 and 8 (Miners / Providers tab), 15 Nov 2026.
+
+Track requirement (Section 5): the service must answer real calls for a supported Intent. Judges check
+correctness, independently measured quality, uptime, capacity, speed, costs, useful Intent coverage, and whether
+it helped H2 mission apps. Each Miner-Intent pair is tested for its task and against same-Intent competition.
+Only claim live rankings, routed use or earnings when network records support them. A high-quality new
+capability can qualify even if demand for its Intent is still growing.
+
+| Criterion | Points |
+|---|---|
+| Independently evaluated intelligence quality (minimum 24) | 35 |
+| Reliability, availability, and capacity | 15 |
+| Verified Intent coverage and application enablement | 10 |
+| Verified H2 mission application consumption | 10 |
+| Cost, latency, and serving economics | 5 |
+| Integration and documentation | 5 |
+| Organic growth, education, and developer activation | 20 |
+
+- Coverage (10): useful Miner-Intent capabilities, especially ones the 15 missions need.
+- Consumption (10): successful requests the Provider served through Telegraph to registered H2 Apps & Agents
+  projects on those missions. 4: a qualifying mission app used it, plus other independent app groups;
+  2: repeated, meaningful use; 2: requests went through the ranked-routing path; 2: verifiable delivery and
+  spending/payment records.
+- Evidence to submit (Section 8): list Miner-Intent pairs; if claiming consumption points, the consuming mission
+  apps, independent groups, repeat use, ranked routes and accounting evidence; and which mission-specific tests
+  or applications the Provider enables.
+- How the consumption points are counted (user screenshots, 15 Nov 2026):
+  - App users (up to 4): 1 point for use by a qualifying H2 mission app, including your own team's app; 1 more for
+    each of up to three independently operated consuming H2 app groups (the first app counts toward these too if an
+    independent group runs it).
+  - Repeat use (up to 2): 1 for at least three meaningful, independently verifiable executions with different inputs;
+    1 for qualifying use on two different UTC dates.
+  - Ranked routing (up to 2): needs verifiable requests through the Intent's ranking and routing policy. Direct
+    requests do not earn ranked-routing points.
+  - Accounting (up to 2): 1 for a matched request-to-Miner-Intent delivery record; 1 for verified cost, spend or
+    payment accounting. Supported testnet and batch-based records count.
+  - Awarded once per Provider entrant across all its Miner-Intent pairs. Each consuming app group counts once per
+    Provider. Related-party use can prove the service works but earns no extra independent-user points. Direct
+    requests can earn use, repeat-use and accounting points if verified. Creating many Intents or meaningless traffic
+    earns nothing extra. A new high-quality capability can still score on quality and usefulness.
+
+## Delivery awards: Miners/Providers and Evaluators (Section 7)
+Source: user screenshots, 15 Nov 2026.
+For each track, judges choose the set of four qualifying independent groups that, in order:
+1. Enables the most distinct commercial missions.
+2. Enables, unblocks or improves the most distinct H2 app workflows.
+3. Meets the most independently verified missing mission-critical Intent needs.
+4. Has the strongest combined technical quality.
+
+Ties and proof:
+- Providers: remaining ties go to verified H2 mission-app consumption, then the Provider quality score.
+- Evaluators: ties go to proven measurement improvement or valuable new coverage, then the validity score.
+- Mission impact needs real proof: a reviewer rerunning an app, an accepted integration test, or a repeatable
+  mission-specific test. Each distinct enabled mission or app workflow counts once across the winners.
+- A Provider or Evaluator can qualify by proving a new mission-critical capability with a suitable test even
+  while the apps that will use it are still being built. Each claimed Intent must pass its own relevant tests.
+- Each independent group can win at most one delivery award per track. Related wallets, jointly controlled teams
+  and materially identical submissions count as one group.
 
 ### The 20 growth points, itemised (same in every track)
 - Content and education (5): public explanation or demo (2); technical tutorial explaining Telegraph's role (2); honest results, limits, lessons (1).
