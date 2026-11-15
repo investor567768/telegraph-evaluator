@@ -38,7 +38,17 @@ Result, run at 2026-11-15T14:53:41Z (raw rows in [`liquidity-check-2026-11-15.ts
 - Both providers index the same blockchains, so agreement confirms consistent reading of on-chain reserves; it is not a check against a pool contract directly.
 - The Intent description mentions depth and slippage at a trade size, while its only answer field is `liquidity_usd`. This source answers total pool liquidity in USD. Open question with the organizers.
 
+## Error cases (tested 15 Nov 2026, about 15:51 UTC)
+What the source returns when the input is wrong, so the node never takes a false number from it.
+
+| Case | Request | DexScreener response | What the node gets |
+|---|---|---|---|
+| Pool address that does not exist | `ethereum/0x0000000000000000000000000000000000000001` | HTTP 200, `{"pairs":null,"pair":null}` | No `liquidity_usd` value |
+| Real pool asked on the wrong chain | `base/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640` (an Ethereum pool) | HTTP 200, `{"pairs":null,"pair":null}` | No `liquidity_usd` value |
+| Chain name that does not exist | `notachain/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640` | HTTP 400 Bad Request (HTML page) | Error status |
+
+In all three, the source gives no number at all rather than a wrong one. Per the Anjoman truth-source docs, a source that returns an error status or an unreadable answer is not counted, and if no reference exists for a question the Intent is simply not ranked that epoch, with no penalty to Providers. So a bad input cannot push a wrong reference value into a ranking through this source. (How the node's parser handles `pairs: null` specifically is inferred from those docs, not observed on the node.)
+
 ## Still to do
-- Error cases: unknown pool address, wrong chain, unsupported chain.
 - Small pools (under $50,000) and a repeat run on a different day.
 - Confirm row state after the next epoch rollover.

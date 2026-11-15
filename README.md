@@ -23,7 +23,7 @@ Each row answers one line of the Evaluators scoring table in [`CRITERIA.md`](CRI
 | Criterion (points) | Our answer | Where to check |
 |---|---|---|
 | Measurement validity, quality discrimination, baseline evidence (40, minimum 28) | DexScreener was compared with GeckoTerminal on 20 pools across 5 chains. Median difference 0.146%, largest 0.375%, 20 of 20 within 2%. Because two independent sources agree within 0.4%, a Provider off by more than about 1% should stand out against this reference (inferred, not yet tested on live Provider answers). | [`EVIDENCE.md`](EVIDENCE.md), [`liquidity-check-2026-11-15.tsv`](liquidity-check-2026-11-15.tsv) |
-| Integrity and robustness (15) | Free public API, no key, nothing to leak. Independent of the Providers being ranked. Known gaps (small pools, error cases) are listed rather than hidden. | [`EVIDENCE.md`](EVIDENCE.md), "What this does and does not show" |
+| Integrity and robustness (15) | Free public API, no key, nothing to leak. Independent of the Providers being ranked. Tested on 3 error cases (unknown pool, wrong chain, invalid chain): each returns no number or an error status, never a wrong value. Remaining gaps are listed rather than hidden. | [`EVIDENCE.md`](EVIDENCE.md), "Error cases" and "What this does and does not show" |
 | Reproducibility and protocol compatibility (10) | Written in the miner YAML format; accepted by Anjoman with no refusals. Anyone can rerun the comparison by opening [`liquidity-compare.html`](liquidity-compare.html) in a browser. | Upload record above; the HTML tool |
 | Useful coverage and demonstrated improvement (10) | Covers a mandatory Intent used by 5 missions, across 5 chains and pool sizes from $0.24M to $75M. Improvement in rankings is not yet measured. | [`EVIDENCE.md`](EVIDENCE.md) |
 | Documentation and integration clarity (5) | This page, the evidence page, and the steps below. | This README |
@@ -44,7 +44,7 @@ https://api.dexscreener.com/latest/dex/pairs/ethereum/0x88e6a0c2ddd26feeb64f039a
 - Testnet only. Nothing here is a production or customer claim.
 - The source is admitted, but not yet confirmed as eligible, frozen into a snapshot, or used in a ranking.
 - The Intent description mentions depth and slippage at a trade size; its only answer field is `liquidity_usd`. This source answers total pool liquidity in USD. This is an open question for the organizers.
-- Tested on large, active pools on one day. Small pools, repeat runs and error cases are still to do.
+- Tested on large, active pools on one day. Small pools and repeat runs are still to do.
 
 ## Files
 | File | What it is |
