@@ -3,6 +3,7 @@
 Usage (downloads both datasets, no key needed):
     python macro-compare.py 2023                 # inflation (default)
     python macro-compare.py 2023 unemployment
+    python macro-compare.py 2023 gdp
 Or with files you saved yourself:
     python macro-compare.py 2023 inflation imf.json worldbank.json
 """
@@ -11,7 +12,8 @@ import json, statistics, sys, urllib.request
 year = sys.argv[1] if len(sys.argv) > 1 else "2023"
 which = sys.argv[2] if len(sys.argv) > 2 else "inflation"
 CODES = {"inflation": ("PCPIPCH", "FP.CPI.TOTL.ZG"),
-         "unemployment": ("LUR", "SL.UEM.TOTL.ZS")}
+         "unemployment": ("LUR", "SL.UEM.TOTL.ZS"),
+         "gdp": ("NGDP_RPCH", "NY.GDP.MKTP.KD.ZG")}
 imf_code, wb_code = CODES[which]
 IMF_URL = f"https://www.imf.org/external/datamapper/api/v1/{imf_code}"
 WB_URL = (f"https://api.worldbank.org/v2/country/all/indicator/{wb_code}"

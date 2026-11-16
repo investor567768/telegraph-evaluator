@@ -53,6 +53,22 @@ Coverage limit: the IMF publishes unemployment for far fewer countries than infl
 
 What this means for Telegraph: for unemployment, a Provider answer within about 1 to 2 pp of this reference is consistent with a legitimate alternative definition, so a tight tolerance would wrongly penalise honest Providers. That tolerance choice belongs to the scoring path, and this evidence is offered to inform it.
 
+## Third indicator: real GDP growth (NGDP_RPCH)
+Second source: World Bank indicator NY.GDP.MKTP.KD.ZG (GDP growth, annual %, constant prices). Raw rows: `imf-vs-worldbank-gdp-growth-2023.tsv`. Reproduce with `python macro-compare.py 2023 gdp`.
+
+| Measure | Value |
+|---|---|
+| Countries compared (in both sources) | 189 |
+| Median absolute difference | 0.04 pp |
+| Within 0.1 pp | 140 of 189 |
+| Within 0.5 pp | 168 of 189 |
+| Within 1 pp | 178 of 189 |
+| Within 2 pp | 183 of 189 |
+
+This is the closest agreement of the three indicators and the widest coverage. Spot checks: Nigeria 3.3 vs 3.32, United States 2.9 vs 2.93, Cote d'Ivoire 6.6 vs 6.6, DR Congo 8.5 vs 8.53. No World Bank country value repeats an aggregate row (the quirk seen in the inflation data does not occur here).
+
+Largest gaps: Timor-Leste 2.4 vs -18.1 (likely because the IMF reports non-oil GDP for Timor-Leste while the World Bank figure includes the declining oil sector), Sudan -23.5 vs -29.4 (wartime estimates, both highly uncertain), Tuvalu -0.9 vs 3.5, Malta 7.1 vs 10.6 (revision timing). Six of 189 differ by more than 2 pp.
+
 ## Error cases
 | Case | Request | IMF response | What the node gets |
 |---|---|---|---|
@@ -61,11 +77,10 @@ What this means for Telegraph: for unemployment, a Provider answer within about 
 Out-of-scope requests (policy rates, monthly prints, core inflation, or no year given) are told in the mapping not to substitute another code, so they resolve to no value rather than a wrong one. This mapping behaviour is stated in the YAML; how the node applies it is not observed directly.
 
 ## What this does and does not show
-- Inflation and unemployment were compared; real GDP growth is supported but not yet cross-checked.
+- All three supported indicators were compared against the World Bank: inflation (175 countries), unemployment (102) and real GDP growth (189).
 - One year (2023). Years after the IMF's latest actuals are projections and will change.
 - The catalogue's example question asks for the latest monthly CPI print and a policy rate. This source answers neither; it covers annual figures for a named year.
 
 ## Still to do
-- Cross-check real GDP growth (NGDP_RPCH).
 - Confirm the row state after the next epoch rollover.
 - Organizer answer on what real requests send in `indicator` and `year`.
