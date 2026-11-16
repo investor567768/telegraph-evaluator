@@ -1,0 +1,51 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-imf-macro-indicator
+name: IMF DataMapper annual macro indicators
+description: Free, public, no-key API of the International Monetary Fund (World Economic Outlook). Annual inflation, unemployment rate and real GDP growth, in percent, by country and year. Covers annual figures only; it has no monthly prints and no central bank policy rates. Years after the latest published actuals are IMF projections, not released outturns.
+base_url: https://www.imf.org
+auth:
+  type: none
+endpoints:
+- path: /macro-indicator
+  external_path: /external/datamapper/api/v1/{indicator}/{country}
+  method: GET
+  description: Annual value of one macro indicator for one country. The answer is at values.{indicator}.{country}.{year}, in percent. If the indicator, country or year is not in the IMF data, there is no value at that location and the answer is missing.
+  intents:
+  - MACRO_ECONOMIC_INDICATOR_GENERAL
+  params:
+    path:
+      required:
+      - name: indicator
+        type: string
+        intents: ['*']
+        description: IMF indicator code. Only three are supported. PCPIPCH = inflation, average consumer prices, annual percent change. LUR = unemployment rate, percent of labour force. NGDP_RPCH = real GDP growth, annual percent change.
+      - name: country
+        type: string
+        intents: ['*']
+        description: ISO 3166-1 alpha-3 country code in upper case, for example NGA (Nigeria), USA (United States), GBR (United Kingdom), DEU (Germany), KOR (South Korea), CIV (Ivory Coast), COD (DR Congo).
+    query:
+      optional:
+      - name: periods
+        type: string
+        intents: ['*']
+        description: Four-digit calendar year, for example 2023.
+intent_mapping:
+  MACRO_ECONOMIC_INDICATOR_GENERAL:
+    endpoint: /macro-indicator
+    input:
+      indicator:
+        from: indicator
+        how: "Map to one IMF code. Inflation, CPI, consumer price index, consumer prices, price growth, headline inflation (annual) -> PCPIPCH. Unemployment, unemployment rate, jobless rate -> LUR. GDP growth, real GDP growth, economic growth, growth rate -> NGDP_RPCH. Anything else, including policy rate, interest rate, federal funds rate, core inflation or a monthly print, is not supported: do not substitute another code."
+      country:
+        from: country
+        how: "ISO 3166-1 alpha-3 code in upper case. Examples: Nigeria -> NGA, United States or US -> USA, United Kingdom or UK or Britain -> GBR, Germany -> DEU, South Korea -> KOR, Ivory Coast or Cote d'Ivoire -> CIV, DR Congo -> COD, Republic of the Congo -> COG."
+      periods:
+        from: year
+        how: "Four-digit calendar year. If no specific year is given, this source does not apply."
+    output:
+      rate_pct: { path: "values.{indicator}.{country}.{periods}", unit: percent }
+semantics:
+  supported_intents:
+  - MACRO_ECONOMIC_INDICATOR_GENERAL
