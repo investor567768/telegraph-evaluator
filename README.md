@@ -9,7 +9,7 @@ Free, no-key public truth sources that give Telegraph a trusted reference answer
 | Intent | Used by H2 missions | Truth sources | Row state on Anjoman | Baseline check |
 |---|---|---|---|---|
 | `LIQUIDITY_DEPTH_VERIFY_GENERAL` | 5: Exchange, Stablecoin, Institutional Markets, Asset Management, Web3 Native & DeFi | DexScreener, GeckoTerminal | Eligible, Eligible | 20 pools, 5 chains: median gap 0.146%, 20 of 20 within 2% |
-| `MACRO_ECONOMIC_INDICATOR_GENERAL` | 5: Institutional Markets, Conflict Intelligence, Commodities, Mining & Power, Asset Management | IMF DataMapper | Admitted | 175 countries vs World Bank: median gap 0.04 pp, 146 within 0.5 pp |
+| `MACRO_ECONOMIC_INDICATOR_GENERAL` | 5: Institutional Markets, Conflict Intelligence, Commodities, Mining & Power, Asset Management | IMF DataMapper | Admitted | Inflation, 175 countries vs World Bank: median gap 0.04 pp. Unemployment, 102 countries: median gap 0.13 pp |
 
 ## Why this matters
 A ranking is only as good as its reference answer. Without one, the network cannot separate a Provider that reports a pool's real liquidity, or a country's real inflation, from one that reports a stale or invented figure, and the apps in these ten mission slots cannot trust what they pay for.
@@ -25,7 +25,7 @@ A ranking is only as good as its reference answer. Without one, the network cann
 | [EVIDENCE.md](EVIDENCE.md) | Liquidity: what was uploaded, the 20-pool check, error cases, limits |
 | [EVIDENCE-macro.md](EVIDENCE-macro.md) | Macro: what was uploaded, the 175-country check, disagreements explained, error case, limits |
 | [dexscreener-liquidity.yaml](dexscreener-liquidity.yaml), [geckoterminal-liquidity.yaml](geckoterminal-liquidity.yaml), [imf-macro-indicator.yaml](imf-macro-indicator.yaml) | The truth sources exactly as uploaded |
-| [liquidity-check-2026-11-15.tsv](liquidity-check-2026-11-15.tsv), [imf-vs-worldbank-inflation-2023.tsv](imf-vs-worldbank-inflation-2023.tsv) | Raw comparison rows |
+| [liquidity-check-2026-11-15.tsv](liquidity-check-2026-11-15.tsv), [imf-vs-worldbank-inflation-2023.tsv](imf-vs-worldbank-inflation-2023.tsv), [imf-vs-worldbank-unemployment-2023.tsv](imf-vs-worldbank-unemployment-2023.tsv) | Raw comparison rows |
 | [liquidity-compare.html](liquidity-compare.html), [macro-compare.py](macro-compare.py) | Tools that reproduce each check |
 | [CRITERIA.md](CRITERIA.md) | The official judging criteria this entry answers |
 

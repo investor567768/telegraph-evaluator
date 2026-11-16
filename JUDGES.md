@@ -30,6 +30,11 @@ python macro-compare.py 2023
 ```
 Expected: 175 countries in both IMF and World Bank, median gap 0.04 percentage points, 146 within 0.5. The largest gaps (Egypt, Haiti, South Sudan) are explained in [EVIDENCE-macro.md](EVIDENCE-macro.md).
 
+```
+python macro-compare.py 2023 unemployment
+```
+Expected: 102 countries, median gap 0.13 percentage points. Looser by design: the World Bank figure is a modelled ILO estimate, the IMF uses national definitions.
+
 Check one value by hand (Nigeria 2023 is 24.7 in `values.PCPIPCH.NGA`):
 ```
 https://www.imf.org/external/datamapper/api/v1/PCPIPCH/NGA
@@ -54,7 +59,7 @@ Criterion names are the organizers' own wording (Section 6, Evaluators; full tex
 | Measurement validity, quality discrimination, and baseline evidence | 40 (minimum 28) | Two independent baseline checks: [EVIDENCE.md](EVIDENCE.md), [EVIDENCE-macro.md](EVIDENCE-macro.md). Disagreements between publishers are named and explained, not hidden. |
 | Integrity and robustness | 15 | Free public sources independent of the Providers ranked; no keys to leak; failure cases in step 5; data-quality issue in the second source flagged in [EVIDENCE-macro.md](EVIDENCE-macro.md). |
 | Reproducibility and protocol compatibility | 10 | Miner YAML format, accepted by Anjoman with no refusals; steps 3 and 4 rerun each check. |
-| Useful evaluation coverage and demonstrated improvement | 10 | Two mandatory Intents, ten mission slots, five chains, 175 countries. Ranking improvement not yet measured. |
+| Useful evaluation coverage and demonstrated improvement | 10 | Two mandatory Intents, ten mission slots, five chains; inflation for 175 countries and unemployment for 102. Ranking improvement not yet measured. |
 | Documentation and integration clarity | 5 | This guide, [README.md](README.md), the two evidence pages. |
 | Organic growth, education, and developer activation | 20 | _Links to public updates, tutorial and independent testers to be added._ |
 

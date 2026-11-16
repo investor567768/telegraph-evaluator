@@ -35,6 +35,24 @@ What this means for Telegraph: for most countries two respected publishers agree
 
 Data-quality note on the second source: 21 World Bank country values in this response are identical, to 14 decimal places, to a World Bank regional or income-group aggregate in the same response (for example Germany equals the Euro area figure). They still sit close to the IMF in most cases, and excluding them leaves the result unchanged (154 countries, median 0.04 pp, 132 within 0.5 pp). The cause is not known.
 
+## Second indicator: unemployment rate (LUR)
+Second source: World Bank indicator SL.UEM.TOTL.ZS, which is the International Labour Organization's modelled estimate, not each country's own national figure. Raw rows: `imf-vs-worldbank-unemployment-2023.tsv`. Reproduce with `python macro-compare.py 2023 unemployment`.
+
+| Measure | Value |
+|---|---|
+| Economies with an IMF unemployment figure for 2023 | 111 |
+| Countries compared (in both sources) | 102 |
+| Median absolute difference | 0.13 pp |
+| Within 0.5 pp | 67 of 102 |
+| Within 2 pp | 87 of 102 |
+| Within 5 pp | 100 of 102 |
+
+Agreement is looser than for inflation, as expected: the IMF reports national definitions, while the World Bank figure is a harmonised ILO model. The largest gaps (Jordan 22.0 vs 16.6, Bahrain 6.3 vs 1.1, Belize 3.3 vs 8.3, Georgia 16.4 vs 11.6, Morocco 13.0 vs 8.9) are countries where national and modelled definitions are known to differ.
+
+Coverage limit: the IMF publishes unemployment for far fewer countries than inflation. For example, it has no Nigeria unemployment figure after 2018, so a 2023 Nigeria request returns no value (missing), not a wrong one.
+
+What this means for Telegraph: for unemployment, a Provider answer within about 1 to 2 pp of this reference is consistent with a legitimate alternative definition, so a tight tolerance would wrongly penalise honest Providers. That tolerance choice belongs to the scoring path, and this evidence is offered to inform it.
+
 ## Error cases
 | Case | Request | IMF response | What the node gets |
 |---|---|---|---|
@@ -43,11 +61,11 @@ Data-quality note on the second source: 21 World Bank country values in this res
 Out-of-scope requests (policy rates, monthly prints, core inflation, or no year given) are told in the mapping not to substitute another code, so they resolve to no value rather than a wrong one. This mapping behaviour is stated in the YAML; how the node applies it is not observed directly.
 
 ## What this does and does not show
-- Inflation only was compared; unemployment and GDP growth are supported but not yet cross-checked.
+- Inflation and unemployment were compared; real GDP growth is supported but not yet cross-checked.
 - One year (2023). Years after the IMF's latest actuals are projections and will change.
 - The catalogue's example question asks for the latest monthly CPI print and a policy rate. This source answers neither; it covers annual figures for a named year.
 
 ## Still to do
-- Cross-check unemployment (LUR) and GDP growth (NGDP_RPCH).
+- Cross-check real GDP growth (NGDP_RPCH).
 - Confirm the row state after the next epoch rollover.
 - Organizer answer on what real requests send in `indicator` and `year`.
