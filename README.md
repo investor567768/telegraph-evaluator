@@ -6,6 +6,12 @@
 
 Free, no-key public truth sources that give Telegraph a trusted reference answer for two mission-critical Intents, so the network can tell a Provider that answers correctly from one that does not. Each source comes with an independent baseline check and tested failure cases.
 
+## Results at a glance
+- **3 truth sources, all Eligible** on Telegraph (DexScreener, GeckoTerminal, IMF). Screenshots: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png).
+- **Accuracy against an independent second source:** 20 pools on 5 chains, all within 2% ([EVIDENCE.md](EVIDENCE.md)); inflation, unemployment and GDP growth for 102 to 189 countries, median gap 0.04 to 0.13 points ([EVIDENCE-macro.md](EVIDENCE-macro.md)).
+- **Live test of a real Telegraph Provider on 5 chains:** 5 of 6 answers accurate within 1%, 1 missing answer caught, and 1 answer found to include a stale reading ([live test](EVIDENCE.md#live-test-across-five-chains-16-nov-2026)).
+- **Failure cases tested:** wrong pool, wrong chain, invalid chain, invalid indicator. Each returns no answer rather than a wrong one.
+
 | Intent | Used by H2 missions | Truth sources | Row state on Anjoman | Baseline check |
 |---|---|---|---|---|
 | `LIQUIDITY_DEPTH_VERIFY_GENERAL` | 5: Exchange, Stablecoin, Institutional Markets, Asset Management, Web3 Native & DeFi | DexScreener, GeckoTerminal | Eligible, Eligible | 20 pools, 5 chains: median gap 0.146%, 20 of 20 within 2% |
