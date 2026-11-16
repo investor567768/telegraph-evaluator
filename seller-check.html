@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seller check: pool liquidity from both truth sources</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 32px auto; padding: 0 16px; color: #1d1d1f; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.note { color: #555; margin-top: 0; }
+  .pools button { margin: 0 6px 6px 0; padding: 6px 10px; border: 1px solid #ccc; background: #f6f6f6; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  label { display: block; margin-top: 12px; font-weight: 600; font-size: 14px; }
+  input, select { width: 100%; padding: 8px; font-size: 14px; box-sizing: border-box; margin-top: 4px; }
+  #run { margin-top: 16px; padding: 10px 18px; font-size: 15px; background: #c2410c; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e5e5e5; }
+  td.num { font-variant-numeric: tabular-nums; }
+  #seller { margin-top: 18px; }
+  #verdict { margin-top: 12px; font-weight: 600; }
+  .err { color: #b91c1c; }
+</style>
+</head>
+<body>
+<h1>Seller check</h1>
+<p class="note">Reads one pool's liquidity from both truth sources (DexScreener and GeckoTerminal) at the same moment, so a Telegraph seller's answer can be compared with them. Free, no key, runs in your browser.</p>
+
+<div class="pools" id="pools"></div>
+
+<label for="chain">Chain</label>
+<select id="chain">
+  <option value="ethereum">ethereum</option>
+  <option value="base">base</option>
+  <option value="bsc">bsc</option>
+  <option value="arbitrum">arbitrum</option>
+  <option value="polygon">polygon</option>
+</select>
+
+<label for="pool">Pool address</label>
+<input id="pool" placeholder="0x...">
+
+<label for="sellerVal">Seller's answer in USD (optional, paste from the Anjoman job)</label>
+<input id="sellerVal" placeholder="e.g. 77251912.58">
+
+<button id="run">Read both sources now</button>
+
+<table id="out" hidden>
+  <tr><th>Source</th><th>Liquidity (USD)</th><th>Seller vs this source</th></tr>
+  <tr><td>DexScreener</td><td class="num" id="ds">…</td><td class="num" id="dsd"></td></tr>
+  <tr><td>GeckoTerminal</td><td class="num" id="gt">…</td><td class="num" id="gtd"></td></tr>
+</table>
+<div id="verdict"></div>
+<p class="note" id="when"></p>
+
+<script>
+const GT = { ethereum: 'eth', base: 'base', bsc: 'bsc', arbitrum: 'arbitrum', polygon: 'polygon_pos' };
+const PRESETS = [
+  ['ethereum', '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', 'Ethereum WETH/USDC'],
+  ['base', '0x72ab388e2e2f6facef59e3c3fa2c4e29011c2d38', 'Base WETH/USDC'],
+  ['bsc', '0x172fcd41e0913e95784454622d1c3724f546f849', 'BSC USDT/WBNB'],
+  ['arbitrum', '0xc6962004f452be9203591991d15f6b388e09e8d0', 'Arbitrum USDC/WETH'],
+  ['polygon', '0x9b08288c3be4f62bbf8d1c20ac9c5e6f9467d8b7', 'Polygon WPOL/USDT']
+];
+const poolsDiv = document.getElementById('pools');
+PRESETS.forEach(([c, a, name]) => {
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.onclick = () => { document.getElementById('chain').value = c; document.getElementById('pool').value = a; };
+  poolsDiv.appendChild(b);
+});
+
+const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+async function getJSON(url) {
+  const r = await fetch(url, { headers: { accept: 'application/json' } });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+document.getElementById('run').onclick = async () => {
+  const chain = document.getElementById('chain').value;
+  const pool = document.getElementById('pool').value.trim().toLowerCase();
+  const seller = parseFloat(document.getElementById('sellerVal').value.replace(/[$,\s]/g, ''));
+  document.getElementById('out').hidden = false;
+  ['ds', 'gt'].forEach(id => { document.getElementById(id).textContent = '…'; document.getElementById(id + 'd').textContent = ''; });
+  document.getElementById('verdict').textContent = '';
+  const results = {};
+  const jobs = [
+    getJSON(`https://api.dexscreener.com/latest/dex/pairs/${chain}/${pool}`)
+      .then(j => { const v = j.pairs && j.pairs[0] && j.pairs[0].liquidity ? j.pairs[0].liquidity.usd : null; if (v == null) throw new Error('no value (pairs: null)'); results.ds = Number(v); })
+      .catch(e => { results.dsErr = e.message; }),
+    getJSON(`https://api.geckoterminal.com/api/v2/networks/${GT[chain]}/pools/${pool}`)
+      .then(j => { const v = j.data && j.data.attributes ? j.data.attributes.reserve_in_usd : null; if (v == null) throw new Error('no value'); results.gt = Number(v); })
+      .catch(e => { results.gtErr = e.message; })
+  ];
+  await Promise.all(jobs);
+  const when = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+  for (const k of ['ds', 'gt']) {
+    const cell = document.getElementById(k);
+    if (results[k] != null) {
+      cell.textContent = fmt(results[k]);
+      if (!isNaN(seller)) document.getElementById(k + 'd').textContent = ((seller - results[k]) / results[k] * 100).toFixed(2) + '%';
+    } else { cell.innerHTML = '<span class="err">' + results[k + 'Err'] + '</span>'; }
+  }
+  if (!isNaN(seller) && results.ds != null && results.gt != null) {
+    const worst = Math.max(Math.abs(seller - results.ds) / results.ds, Math.abs(seller - results.gt) / results.gt) * 100;
+    document.getElementById('verdict').textContent = worst <= 2 ? `Within 2% of both truth sources (largest gap ${worst.toFixed(2)}%).` : `Outside 2% of at least one truth source (largest gap ${worst.toFixed(2)}%).`;
+  }
+  document.getElementById('when').textContent = `Read at ${when} · chain ${chain} · pool ${pool}`;
+};
+</script>
+</body>
+</html>
