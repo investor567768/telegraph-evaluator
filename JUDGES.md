@@ -12,7 +12,9 @@ Three free, no-key truth sources that give Telegraph reference answers for two m
 ## 2. Confirm they are on the network (1 minute)
 1. Sign in at [anjoman.ai](https://anjoman.ai) and open [Evaluators](https://anjoman.ai/dashboard/eval).
 2. Select each Intent above. The contributor's submissions are listed under `0x5726…365C`.
-3. Expected: liquidity shows **Eligible · 2**; macro shows **Admitted** (Eligible after the next epoch rollover).
+3. Expected: liquidity shows **Eligible · 2**; macro shows **Eligible · 1**.
+
+No sign-in? Screenshots of both rows: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png).
 
 ## 3. Reproduce the liquidity check (1 minute)
 1. Download [liquidity-compare.html](liquidity-compare.html) and open it in Chrome, Edge or Firefox.
@@ -25,6 +27,7 @@ https://api.dexscreener.com/latest/dex/pairs/ethereum/0x88e6a0c2ddd26feeb64f039a
 ```
 
 ## 4. Reproduce the macro check (1 minute)
+Needs Python 3 and nothing else (no packages to install, no key). Download [macro-compare.py](macro-compare.py), open a terminal in the same folder, then run:
 ```
 python macro-compare.py 2023
 ```

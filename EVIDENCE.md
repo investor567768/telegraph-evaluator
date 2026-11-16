@@ -9,7 +9,7 @@ Network: Telegraph testnet. Nothing here is a production or mainnet claim.
 - Result shown by Anjoman: "Sent. 1 stored, 0 already there, 0 refused." Row state: Admitted.
 - Submissions are listed under 0x5726...365C; the account wallet is 0xd020A889542a55540D13a8A4ed199cD8CF318484.
 - Row state changed to Eligible (seen 15 Nov 2026, 16:14 UTC). Not yet claimed: frozen into a snapshot or used in a ranking.
-- Second truth source: GeckoTerminal (`geckoterminal-liquidity.yaml`), uploaded 16:16 UTC, now Eligible (seen 16 Nov 2026). Its agreement with DexScreener is the baseline check below.
+- Second truth source: GeckoTerminal (`geckoterminal-liquidity.yaml`), uploaded 16:16 UTC, now Eligible (seen 16 Nov 2026; [screenshot](anjoman-liquidity.png)). Its agreement with DexScreener is the baseline check below.
 
 ## Baseline check against an independent second source
 Question: does DexScreener report the same pool liquidity as an unrelated provider?

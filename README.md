@@ -9,7 +9,7 @@ Free, no-key public truth sources that give Telegraph a trusted reference answer
 | Intent | Used by H2 missions | Truth sources | Row state on Anjoman | Baseline check |
 |---|---|---|---|---|
 | `LIQUIDITY_DEPTH_VERIFY_GENERAL` | 5: Exchange, Stablecoin, Institutional Markets, Asset Management, Web3 Native & DeFi | DexScreener, GeckoTerminal | Eligible, Eligible | 20 pools, 5 chains: median gap 0.146%, 20 of 20 within 2% |
-| `MACRO_ECONOMIC_INDICATOR_GENERAL` | 5: Institutional Markets, Conflict Intelligence, Commodities, Mining & Power, Asset Management | IMF DataMapper | Admitted | Inflation, 175 countries vs World Bank: median gap 0.04 pp. Unemployment, 102 countries: median gap 0.13 pp. GDP growth, 189 countries: median gap 0.04 pp |
+| `MACRO_ECONOMIC_INDICATOR_GENERAL` | 5: Institutional Markets, Conflict Intelligence, Commodities, Mining & Power, Asset Management | IMF DataMapper | Eligible | Inflation, 175 countries vs World Bank: median gap 0.04 pp. Unemployment, 102 countries: median gap 0.13 pp. GDP growth, 189 countries: median gap 0.04 pp |
 
 ## Why this matters
 A ranking is only as good as its reference answer. Without one, the network cannot separate a Provider that reports a pool's real liquidity, or a country's real inflation, from one that reports a stale or invented figure, and the apps in these ten mission slots cannot trust what they pay for.
@@ -35,7 +35,7 @@ A ranking is only as good as its reference answer. Without one, the network cann
 - Coordination thread: [bounties issue #202, Web3 Native & DeFi](https://github.com/telegraphprotocol/bounties/issues/202) (claimed 15 Nov 2026).
 
 ## Honest limits
-- Rows are Eligible or Admitted; none is yet confirmed as frozen into a snapshot or used in a ranking.
+- All three rows are Eligible; none is yet confirmed as frozen into a snapshot or used in a ranking.
 - Liquidity sources return total pool liquidity in USD, not depth at a trade size: the Intent takes no trade-size input. The organizers confirmed total liquidity is welcome.
 - The IMF source covers annual inflation, unemployment and real GDP growth for a named year. It has no monthly prints and no policy rates, and recent years are IMF projections.
 - Each check is one run on one day.

@@ -6,8 +6,8 @@ Network: Telegraph testnet. Nothing here is a production or mainnet claim.
 - Truth source: IMF DataMapper public API (free, no key), file `imf-macro-indicator.yaml`.
 - Intent: `MACRO_ECONOMIC_INDICATOR_GENERAL` (asks: indicator, country, year; answers: rate_pct).
 - Supported indicators: inflation (PCPIPCH), unemployment rate (LUR), real GDP growth (NGDP_RPCH). Annual figures only.
-- Uploaded through the Anjoman Evaluators page on 16 Nov 2026. Row state: Admitted.
-- Not yet claimed: eligible, frozen into a snapshot, or used in a ranking.
+- Uploaded through the Anjoman Evaluators page on 16 Nov 2026. Row state: Admitted at upload (11:17 UTC), Eligible when checked at 12:59 UTC the same day ([screenshot](anjoman-macro.png)).
+- Not yet claimed: frozen into a snapshot, or used in a ranking.
 
 ## Baseline check against an independent second source
 Question: does the IMF report the same annual inflation as an unrelated publisher?
@@ -82,5 +82,4 @@ Out-of-scope requests (policy rates, monthly prints, core inflation, or no year 
 - The catalogue's example question asks for the latest monthly CPI print and a policy rate. This source answers neither; it covers annual figures for a named year.
 
 ## Still to do
-- Confirm the row state after the next epoch rollover.
 - Organizer answer on what real requests send in `indicator` and `year`.
