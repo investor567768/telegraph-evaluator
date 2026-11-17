@@ -43,6 +43,8 @@ A ranking is only as good as its reference answer. Without one, the network cann
 | 17 Nov 2026 | [X](https://x.com/kingChrys494/status/2122669988876104176) | Public post outside the Telegraph community |
 | 17 Nov 2026 | [GitHub bounties #202](https://github.com/telegraphprotocol/bounties/issues/202) | /progress update |
 
+Tutorial: [How to add a truth source to Telegraph in 15 minutes](TUTORIAL.md).
+
 Try it yourself: open [seller-check.html](seller-check.html) in a browser, pick a pool, and compare any Telegraph answer with both truth sources. No key, no install.
 
 ## Accounts and records
