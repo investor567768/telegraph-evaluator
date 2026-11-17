@@ -69,6 +69,6 @@ Criterion names are the organizers' own wording (Section 6, Evaluators; full tex
 | Reproducibility and protocol compatibility | 10 | Miner YAML format, accepted by Anjoman with no refusals; steps 3 and 4 rerun each check. |
 | Useful evaluation coverage and demonstrated improvement | 10 | Two mandatory Intents, ten mission slots, five chains; inflation for 175 countries, unemployment for 102 and GDP growth for 189. Live test of a real seller on 5 chains: 4 accurate within 1%, 1 missing answer caught ([EVIDENCE.md](EVIDENCE.md#live-test-across-five-chains-16-nov-2026)). Ranking improvement not yet measured. |
 | Documentation and integration clarity | 5 | This guide, [README.md](README.md), the two evidence pages. |
-| Organic growth, education, and developer activation | 20 | _Links to public updates, tutorial and independent testers to be added._ |
+| Organic growth, education, and developer activation | 20 | Public updates so far: showcase build log, #feedback bug report, X post, GitHub /progress (all 17 Nov), listed with links in the [README](README.md#public-updates-and-community). Anyone can test Providers with [seller-check.html](seller-check.html). Tutorial and independent testers to be added. |
 
 Entry requirements (Section 5): the bounties repository is starred by this GitHub account; the network used is stated on every page (testnet).

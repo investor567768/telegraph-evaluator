@@ -35,6 +35,16 @@ A ranking is only as good as its reference answer. Without one, the network cann
 | [liquidity-compare.html](liquidity-compare.html), [macro-compare.py](macro-compare.py) | Tools that reproduce each check |
 | [CRITERIA.md](CRITERIA.md) | The official judging criteria this entry answers |
 
+## Public updates and community
+| Date | Where | What |
+|---|---|---|
+| 17 Nov 2026 | [Telegraph Discord #showcase](https://discord.com/channels/1438396125609463881/1572225959656947774/1572225959656947774) | Build log #1: truth sources, baseline checks, live Provider test |
+| 17 Nov 2026 | [Telegraph Discord #feedback](https://discord.com/channels/1438396125609463881/1572219286729007115/1572219286729007115) | Bug report: 3 issues found while testing the liquidity Intent |
+| 17 Nov 2026 | [X](https://x.com/kingChrys494/status/2122669988876104176) | Public post outside the Telegraph community |
+| 17 Nov 2026 | [GitHub bounties #202](https://github.com/telegraphprotocol/bounties/issues/202) | /progress update |
+
+Try it yourself: open [seller-check.html](seller-check.html) in a browser, pick a pool, and compare any Telegraph answer with both truth sources. No key, no install.
+
 ## Accounts and records
 - Anjoman account wallet: `0xd020A889542a55540D13a8A4ed199cD8CF318484` (gas sponsored by Anjoman; no fees paid for uploads).
 - Evaluation uploads are listed on Anjoman under the signing address shown as `0x5726…365C`.
@@ -44,4 +54,4 @@ A ranking is only as good as its reference answer. Without one, the network cann
 - All three rows are Eligible; none is yet confirmed as frozen into a snapshot or used in a ranking.
 - Liquidity sources return total pool liquidity in USD, not depth at a trade size: the Intent takes no trade-size input. The organizers confirmed total liquidity is welcome.
 - The IMF source covers annual inflation, unemployment and real GDP growth for a named year. It has no monthly prints and no policy rates, and recent years are IMF projections.
-- Each check is one run on one day.
+- The liquidity baseline is one run on one day (15 Nov); the live Provider test is one afternoon (16 Nov).
