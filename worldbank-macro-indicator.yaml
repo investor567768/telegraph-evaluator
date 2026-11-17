@@ -1,0 +1,58 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-worldbank-macro-indicator
+name: World Bank annual macro indicators
+description: Free, public, no-key API of the World Bank (World Development Indicators). Annual unemployment rate, inflation and real GDP growth, in percent, by country and year. The unemployment rate is the World Bank series SL.UEM.TOTL.ZS (modelled ILO estimate, percent of total labour force), the definition this Intent cites. Annual figures only; no monthly prints and no policy rates.
+base_url: https://api.worldbank.org
+auth:
+  type: none
+endpoints:
+- path: /macro-indicator
+  external_path: /v2/country/{country}/indicator/{indicator}
+  method: GET
+  description: Annual value of one indicator for one country and year. The reply is a JSON list; the answer is at 1.0.value, in percent. If the country code is invalid the reply has no second element, and if the year has no figure the value is null, so the answer is missing rather than wrong.
+  intents:
+  - MACRO_ECONOMIC_INDICATOR_GENERAL
+  params:
+    path:
+      required:
+      - name: country
+        type: string
+        intents: ['*']
+        description: ISO 3166-1 alpha-3 country code in upper case, for example NGA (Nigeria), USA (United States), GBR (United Kingdom), DEU (Germany), KOR (South Korea), CIV (Ivory Coast), COD (DR Congo).
+      - name: indicator
+        type: string
+        intents: ['*']
+        description: World Bank indicator code. SL.UEM.TOTL.ZS = unemployment rate, percent of total labour force (modelled ILO). FP.CPI.TOTL.ZG = inflation, consumer prices, annual percent. NY.GDP.MKTP.KD.ZG = real GDP growth, annual percent.
+    query:
+      required:
+      - name: date
+        type: string
+        intents: ['*']
+        description: Four-digit calendar year, for example 2023.
+      - name: format
+        type: string
+        intents: ['*']
+        description: Always the literal value json.
+intent_mapping:
+  MACRO_ECONOMIC_INDICATOR_GENERAL:
+    endpoint: /macro-indicator
+    input:
+      indicator:
+        from: indicator
+        how: "Map to one World Bank code. Unemployment rate, unemployment, jobless rate, SL.UEM.TOTL.ZS -> SL.UEM.TOTL.ZS. Inflation, CPI, consumer prices (annual) -> FP.CPI.TOTL.ZG. GDP growth, real GDP growth, economic growth -> NY.GDP.MKTP.KD.ZG. Anything else, including policy rates or monthly prints, is not supported: do not substitute another code."
+      country:
+        from: country
+        how: "ISO 3166-1 alpha-3 code in upper case. Examples: Nigeria -> NGA, United States or US -> USA, United Kingdom or UK or Britain -> GBR, Germany -> DEU, South Korea -> KOR, Ivory Coast or Cote d'Ivoire -> CIV, DR Congo -> COD, Republic of the Congo -> COG."
+      date:
+        from: year
+        how: "Four-digit calendar year. If no specific year is given, this source does not apply."
+      format:
+        from: year
+        how: "Always the literal value json, whatever the input."
+    output:
+      rate_pct: { path: "1.0.value", unit: percent }
+semantics:
+  supported_intents:
+  - MACRO_ECONOMIC_INDICATOR_GENERAL

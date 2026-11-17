@@ -7,12 +7,12 @@ Track: Evaluators. Network: Telegraph testnet. Everything below can be checked w
 ## 1. What this is (1 minute)
 Three free, no-key truth sources that give Telegraph reference answers for two mandatory Intents used by ten H2 mission slots:
 - `LIQUIDITY_DEPTH_VERIFY_GENERAL`: DexScreener and GeckoTerminal, pool liquidity in USD.
-- `MACRO_ECONOMIC_INDICATOR_GENERAL`: IMF DataMapper, annual inflation, unemployment and GDP growth in percent.
+- `MACRO_ECONOMIC_INDICATOR_GENERAL`: IMF DataMapper and World Bank, annual figures in percent. The World Bank series is the one the Intent itself cites for unemployment.
 
 ## 2. Confirm they are on the network (1 minute)
 1. Sign in at [anjoman.ai](https://anjoman.ai) and open [Evaluators](https://anjoman.ai/dashboard/eval).
 2. Select each Intent above. The contributor's submissions are listed under `0x5726…365C`.
-3. Expected: liquidity shows **Eligible · 2**; macro shows **Eligible · 1**.
+3. Expected: liquidity shows **Eligible · 2**; macro shows **Eligible · 1** (IMF) and **Admitted · 1** (World Bank, uploaded 17 Nov).
 
 No sign-in? Screenshots of both rows: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png).
 

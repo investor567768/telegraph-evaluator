@@ -1,4 +1,4 @@
-# Evidence: IMF DataMapper as a truth source for MACRO_ECONOMIC_INDICATOR_GENERAL
+# Evidence: IMF and World Bank truth sources for MACRO_ECONOMIC_INDICATOR_GENERAL
 
 Network: Telegraph testnet. Nothing here is a production or mainnet claim.
 
@@ -69,6 +69,15 @@ This is the closest agreement of the three indicators and the widest coverage. S
 
 Largest gaps: Timor-Leste 2.4 vs -18.1 (likely because the IMF reports non-oil GDP for Timor-Leste while the World Bank figure includes the declining oil sector), Sudan -23.5 vs -29.4 (wartime estimates, both highly uncertain), Tuvalu -0.9 vs 3.5, Malta 7.1 vs 10.6 (revision timing). Six of 189 differ by more than 2 pp.
 
+## Second truth source: World Bank (added 17 Nov 2026)
+Why: the Anjoman request form for this Intent (checked 17 Nov) offers one indicator, **unemployment rate**, and its hint defines it as the World Bank series `SL.UEM.TOTL.ZS` (modelled ILO estimate). So the World Bank is the reference the Intent itself cites. The IMF source stays as an independent second source.
+
+- File: `worldbank-macro-indicator.yaml`. World Bank Indicators API, free, no key. Answer at `1.0.value`, in percent.
+- Uploaded 17 Nov 2026, 15:26 UTC. Row state: Admitted (checked at the next epoch rollover).
+- Covers gaps in the IMF source: the IMF has no Nigeria unemployment figure after 2018; the World Bank returns **3.074%** for Nigeria, 2023 ([screenshot](worldbank-nigeria-2023.png)).
+- Agreement with the IMF on unemployment, 2023: 102 countries, median gap 0.13 points (section above). Each source checks the other.
+- Error behaviour: an invalid country code returns an error message with no second list element, and a year with no figure returns `"value": null`. Either way the answer is missing rather than wrong.
+
 ## Error cases
 | Case | Request | IMF response | What the node gets |
 |---|---|---|---|
@@ -82,4 +91,5 @@ Out-of-scope requests (policy rates, monthly prints, core inflation, or no year 
 - The catalogue's example question asks for the latest monthly CPI print and a policy rate. This source answers neither; it covers annual figures for a named year.
 
 ## Still to do
-- Organizer answer on what real requests send in `indicator` and `year`.
+- Confirm the World Bank row turns Eligible after the epoch rollover.
+- Answered by the request form itself (17 Nov): `indicator` is chosen from a list (currently only "unemployment rate"), `country` is typed, `year` is required.
