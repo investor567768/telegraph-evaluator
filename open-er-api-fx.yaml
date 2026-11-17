@@ -1,0 +1,55 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-open-er-api-fx
+name: ExchangeRate-API open access
+description: Free, public, no-key API (open.er-api.com) with daily-updated exchange rates. Returns the price of one unit of the requested currency in US dollars. Updated once a day, so it is a daily rate, not tick-by-tick.
+base_url: https://open.er-api.com
+auth:
+  type: none
+endpoints:
+- path: /fx-rate
+  external_path: /v6/latest/{currency}
+  method: GET
+  description: Latest daily rates with the requested currency as base. The answer is at rates.USD, in US dollars per one unit of that currency. An unknown code returns result error with no rates, so the answer is missing rather than wrong.
+  intents:
+  - FX_NOW_EUR
+  - FX_NOW_CAD
+  - FX_NOW_SEK
+  params:
+    path:
+      required:
+      - name: currency
+        type: string
+        intents: ['*']
+        description: Three-letter ISO 4217 currency code being priced, for example EUR, CAD, SEK.
+intent_mapping:
+  FX_NOW_EUR:
+    endpoint: /fx-rate
+    input:
+      currency:
+        from: currency
+        how: "Three-letter ISO 4217 code in upper case, for example EUR, CAD, SEK."
+    output:
+      rate: { path: rates.USD }
+  FX_NOW_CAD:
+    endpoint: /fx-rate
+    input:
+      currency:
+        from: currency
+        how: "Three-letter ISO 4217 code in upper case, for example EUR, CAD, SEK."
+    output:
+      rate: { path: rates.USD }
+  FX_NOW_SEK:
+    endpoint: /fx-rate
+    input:
+      currency:
+        from: currency
+        how: "Three-letter ISO 4217 code in upper case, for example EUR, CAD, SEK."
+    output:
+      rate: { path: rates.USD }
+semantics:
+  supported_intents:
+  - FX_NOW_EUR
+  - FX_NOW_CAD
+  - FX_NOW_SEK

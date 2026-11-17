@@ -1,0 +1,68 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-frankfurter-ecb-fx
+name: Frankfurter (European Central Bank reference rates)
+description: Free, public, no-key API serving the European Central Bank daily reference rates. Returns the price of one unit of the requested currency in US dollars (for EUR, USD per 1 EUR). ECB rates are published once per working day around 16:00 CET, so between publications the figure is the latest official fix, not a tick-by-tick live rate.
+base_url: https://api.frankfurter.dev
+auth:
+  type: none
+endpoints:
+- path: /fx-rate
+  external_path: /v1/latest
+  method: GET
+  description: Latest ECB reference rate. The answer is at rates.USD, in US dollars per one unit of the requested currency. An unknown currency code returns an error with no rates, so the answer is missing rather than wrong.
+  intents:
+  - FX_NOW_EUR
+  - FX_NOW_CAD
+  - FX_NOW_SEK
+  params:
+    query:
+      required:
+      - name: from
+        type: string
+        intents: ['*']
+        description: Three-letter ISO 4217 currency code being priced, for example EUR, CAD, SEK.
+      - name: to
+        type: string
+        intents: ['*']
+        description: Always USD.
+intent_mapping:
+  FX_NOW_EUR:
+    endpoint: /fx-rate
+    input:
+      from:
+        from: currency
+        how: "Three-letter ISO 4217 code in upper case, for example EUR, CAD, SEK."
+      to:
+        from: currency
+        how: "Always the literal value USD, whatever the input."
+    output:
+      rate: { path: rates.USD }
+  FX_NOW_CAD:
+    endpoint: /fx-rate
+    input:
+      from:
+        from: currency
+        how: "Three-letter ISO 4217 code in upper case, for example EUR, CAD, SEK."
+      to:
+        from: currency
+        how: "Always the literal value USD, whatever the input."
+    output:
+      rate: { path: rates.USD }
+  FX_NOW_SEK:
+    endpoint: /fx-rate
+    input:
+      from:
+        from: currency
+        how: "Three-letter ISO 4217 code in upper case, for example EUR, CAD, SEK."
+      to:
+        from: currency
+        how: "Always the literal value USD, whatever the input."
+    output:
+      rate: { path: rates.USD }
+semantics:
+  supported_intents:
+  - FX_NOW_EUR
+  - FX_NOW_CAD
+  - FX_NOW_SEK

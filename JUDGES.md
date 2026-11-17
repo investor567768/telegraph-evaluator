@@ -7,12 +7,13 @@ Track: Evaluators. Network: Telegraph testnet. Everything below can be checked w
 ## 1. What this is (1 minute)
 Three free, no-key truth sources that give Telegraph reference answers for two mandatory Intents used by ten H2 mission slots:
 - `LIQUIDITY_DEPTH_VERIFY_GENERAL`: DexScreener and GeckoTerminal, pool liquidity in USD.
+- `FX_NOW_EUR`, `FX_NOW_CAD`, `FX_NOW_SEK`: Frankfurter (European Central Bank) and open.er-api, US dollars per one unit of the currency. See [EVIDENCE-fx.md](EVIDENCE-fx.md).
 - `MACRO_ECONOMIC_INDICATOR_GENERAL`: IMF DataMapper and World Bank, annual figures in percent. The World Bank series is the one the Intent itself cites for unemployment.
 
 ## 2. Confirm they are on the network (1 minute)
 1. Sign in at [anjoman.ai](https://anjoman.ai) and open [Evaluators](https://anjoman.ai/dashboard/eval).
 2. Select each Intent above. The contributor's submissions are listed under `0x5726…365C`.
-3. Expected: liquidity shows **Eligible · 2**; macro shows **Eligible · 1** (IMF) and **Admitted · 1** (World Bank, uploaded 17 Nov).
+3. Expected: liquidity shows **Eligible · 2**; macro shows **Eligible · 1** (IMF) and **Admitted · 1** (World Bank, uploaded 17 Nov); each FX Intent shows **Admitted · 2** (uploaded 17 Nov).
 
 No sign-in? Screenshots of both rows: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png).
 
@@ -56,6 +57,7 @@ A wrong input gives no number, never a wrong one:
 | Liquidity, real pool on the wrong chain | `{"pairs":null}` |
 | Liquidity, invalid chain name | HTTP 400 |
 | Macro, indicator code that does not exist | No `values` section |
+| FX, currency code that does not exist | `not found` / `unsupported-code` |
 
 Details: [EVIDENCE.md](EVIDENCE.md#error-cases-tested-15-nov-2026-about-1551-utc), [EVIDENCE-macro.md](EVIDENCE-macro.md#error-cases).
 
@@ -64,10 +66,10 @@ Criterion names are the organizers' own wording (Section 6, Evaluators; full tex
 
 | Criterion | Points | Where to look |
 |---|---|---|
-| Measurement validity, quality discrimination, and baseline evidence | 40 (minimum 28) | Two independent baseline checks: [EVIDENCE.md](EVIDENCE.md), [EVIDENCE-macro.md](EVIDENCE-macro.md). Disagreements between publishers are named and explained, not hidden. Live seller test: accurate answers, a stale input and a missing answer all told apart. |
+| Measurement validity, quality discrimination, and baseline evidence | 40 (minimum 28) | Two independent baseline checks: [EVIDENCE.md](EVIDENCE.md), [EVIDENCE-macro.md](EVIDENCE-macro.md). Disagreements between publishers are named and explained, not hidden. Live seller test: accurate answers, a stale input and a missing answer all told apart. FX live test: a correct 1.10 answer was replaced by Telegraph with 1.00; the truth sources show which is right ([EVIDENCE-fx.md](EVIDENCE-fx.md)). |
 | Integrity and robustness | 15 | Free public sources independent of the Providers ranked; no keys to leak; failure cases in step 5; data-quality issue in the second source flagged in [EVIDENCE-macro.md](EVIDENCE-macro.md). |
 | Reproducibility and protocol compatibility | 10 | Miner YAML format, accepted by Anjoman with no refusals; steps 3 and 4 rerun each check. |
-| Useful evaluation coverage and demonstrated improvement | 10 | Two mandatory Intents, ten mission slots, five chains; inflation for 175 countries, unemployment for 102 and GDP growth for 189. Live test of a real seller on 5 chains: 4 accurate within 1%, 1 missing answer caught ([EVIDENCE.md](EVIDENCE.md#live-test-across-five-chains-16-nov-2026)). Ranking improvement not yet measured. |
+| Useful evaluation coverage and demonstrated improvement | 10 | Five Intents (liquidity, macro, three FX) covering 9 of 15 missions; inflation for 175 countries, unemployment for 102 and GDP growth for 189. Live test of a real seller on 5 chains: 4 accurate within 1%, 1 missing answer caught ([EVIDENCE.md](EVIDENCE.md#live-test-across-five-chains-16-nov-2026)). Ranking improvement not yet measured. |
 | Documentation and integration clarity | 5 | This guide, [README.md](README.md), the two evidence pages. |
 | Organic growth, education, and developer activation | 20 | Public updates so far: showcase build log, #feedback bug report, X post, GitHub /progress (all 17 Nov), listed with links in the [README](README.md#public-updates-and-community). Anyone can test Providers with [seller-check.html](seller-check.html). Tutorial: [TUTORIAL.md](TUTORIAL.md). Independent testers to be added. |
 
