@@ -39,15 +39,17 @@
 <input id="pool" placeholder="0x...">
 
 <label for="sellerVal">Seller's answer in USD (optional, paste from the Anjoman job)</label>
-<input id="sellerVal" placeholder="e.g. 77251912.58">
+<input id="sellerVal" placeholder="e.g. 77251912.58, 75.07M or 750k">
 
 <button id="run">Read both sources now</button>
 
 <table id="out" hidden>
-  <tr><th>Source</th><th>Liquidity (USD)</th><th>Seller vs this source</th></tr>
-  <tr><td>DexScreener</td><td class="num" id="ds">…</td><td class="num" id="dsd"></td></tr>
-  <tr><td>GeckoTerminal</td><td class="num" id="gt">…</td><td class="num" id="gtd"></td></tr>
+  <tr><th>Source</th><th>Liquidity (USD)</th><th>Seller vs this source</th><th>Replied at (UTC)</th></tr>
+  <tr><td>DexScreener</td><td class="num" id="ds">…</td><td class="num" id="dsd"></td><td class="num" id="dst"></td></tr>
+  <tr><td>GeckoTerminal</td><td class="num" id="gt">…</td><td class="num" id="gtd"></td><td class="num" id="gtt"></td></tr>
 </table>
+<p class="note" id="srcgap"></p>
+<p class="note" id="sellerRead"></p>
 <div id="verdict"></div>
 <p class="note" id="when"></p>
 
@@ -69,42 +71,86 @@ PRESETS.forEach(([c, a, name]) => {
 });
 
 const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nowUTC = () => new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+// Reads a seller's number. Accepts plain numbers ("75,070,000", "$75070000.12")
+// and k / m / b suffixes ("750k", "75.07M", "1.2b"). Anything else is refused,
+// so "75.07M" can never be silently read as $75.07.
+function parseAmount(raw) {
+  const t = raw.trim().replace(/^\$/, '').replace(/\s*usd$/i, '').replace(/[,\s]/g, '');
+  if (t === '') return { empty: true };
+  const m = t.match(/^(\d+(?:\.\d+)?)([kmb])?$/i);
+  if (!m) return { error: `Couldn't read "${raw.trim()}" as a dollar amount. Use a plain number like 75070000, or a k / m / b suffix like 75.07M.` };
+  const mult = { k: 1e3, m: 1e6, b: 1e9 }[(m[2] || '').toLowerCase()] || 1;
+  return { value: Number(m[1]) * mult };
+}
+
+class SourceError extends Error {}
 async function getJSON(url) {
-  const r = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  let r;
+  try { r = await fetch(url, { headers: { accept: 'application/json' } }); }
+  catch (e) { throw new SourceError('Could not reach this source (network error). Try again.'); }
+  if (r.status === 404) throw new SourceError('Pool not found on this chain. Check the chain.');
+  if (r.status === 429) throw new SourceError('This source is busy (too many requests). Wait a minute and try again.');
+  if (!r.ok) throw new SourceError('Source error (HTTP ' + r.status + ').');
   return r.json();
+}
+function readValue(v) {
+  if (v == null) throw new SourceError('Pool not found on this chain. Check the chain.');
+  const n = Number(v);
+  if (!isFinite(n)) throw new SourceError('Source returned an unreadable value.');
+  if (n <= 0) throw new SourceError("Source returned 0, so there's nothing to compare against.");
+  return n;
 }
 
 document.getElementById('run').onclick = async () => {
   const chain = document.getElementById('chain').value;
   const pool = document.getElementById('pool').value.trim().toLowerCase();
-  const seller = parseFloat(document.getElementById('sellerVal').value.replace(/[$,\s]/g, ''));
+  const parsed = parseAmount(document.getElementById('sellerVal').value);
+  const seller = parsed.value;
   document.getElementById('out').hidden = false;
-  ['ds', 'gt'].forEach(id => { document.getElementById(id).textContent = '…'; document.getElementById(id + 'd').textContent = ''; });
-  document.getElementById('verdict').textContent = '';
+  ['ds', 'gt'].forEach(id => { document.getElementById(id).textContent = '…'; document.getElementById(id + 'd').textContent = ''; document.getElementById(id + 't').textContent = ''; });
+  ['verdict', 'srcgap', 'sellerRead'].forEach(id => { document.getElementById(id).textContent = ''; });
+  document.getElementById('verdict').classList.remove('err');
+  if (parsed.error) { document.getElementById('sellerRead').innerHTML = ''; const e = document.createElement('span'); e.className = 'err'; e.textContent = parsed.error; document.getElementById('sellerRead').appendChild(e); }
+  else if (seller != null) document.getElementById('sellerRead').textContent = `Seller's answer read as $${fmt(seller)}.`;
+
   const results = {};
   const jobs = [
     getJSON(`https://api.dexscreener.com/latest/dex/pairs/${chain}/${pool}`)
-      .then(j => { const v = j.pairs && j.pairs[0] && j.pairs[0].liquidity ? j.pairs[0].liquidity.usd : null; if (v == null) throw new Error('no value (pairs: null)'); results.ds = Number(v); })
-      .catch(e => { results.dsErr = e.message; }),
+      .then(j => { results.ds = readValue(j.pairs && j.pairs[0] && j.pairs[0].liquidity ? j.pairs[0].liquidity.usd : null); })
+      .catch(e => { results.dsErr = e instanceof SourceError ? e.message : 'Unexpected reply from this source.'; })
+      .finally(() => { results.dsAt = nowUTC(); }),
     getJSON(`https://api.geckoterminal.com/api/v2/networks/${GT[chain]}/pools/${pool}`)
-      .then(j => { const v = j.data && j.data.attributes ? j.data.attributes.reserve_in_usd : null; if (v == null) throw new Error('no value'); results.gt = Number(v); })
-      .catch(e => { results.gtErr = e.message; })
+      .then(j => { results.gt = readValue(j.data && j.data.attributes ? j.data.attributes.reserve_in_usd : null); })
+      .catch(e => { results.gtErr = e instanceof SourceError ? e.message : 'Unexpected reply from this source.'; })
+      .finally(() => { results.gtAt = nowUTC(); })
   ];
   await Promise.all(jobs);
-  const when = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
   for (const k of ['ds', 'gt']) {
     const cell = document.getElementById(k);
+    document.getElementById(k + 't').textContent = results[k + 'At'];
     if (results[k] != null) {
       cell.textContent = fmt(results[k]);
-      if (!isNaN(seller)) document.getElementById(k + 'd').textContent = ((seller - results[k]) / results[k] * 100).toFixed(2) + '%';
-    } else { cell.innerHTML = '<span class="err">' + results[k + 'Err'] + '</span>'; }
+      if (seller != null) { const pct = (seller - results[k]) / results[k] * 100; document.getElementById(k + 'd').textContent = (Math.abs(pct) < 0.005 ? 0 : pct).toFixed(2) + '%'; }
+    } else { cell.innerHTML = ''; const e = document.createElement('span'); e.className = 'err'; e.textContent = results[k + 'Err']; cell.appendChild(e); }
   }
-  if (!isNaN(seller) && results.ds != null && results.gt != null) {
-    const worst = Math.max(Math.abs(seller - results.ds) / results.ds, Math.abs(seller - results.gt) / results.gt) * 100;
-    document.getElementById('verdict').textContent = worst <= 2 ? `Within 2% of both truth sources (largest gap ${worst.toFixed(2)}%).` : `Outside 2% of at least one truth source (largest gap ${worst.toFixed(2)}%).`;
+  const verdict = document.getElementById('verdict');
+  if (results.ds != null && results.gt != null) {
+    const srcGap = Math.abs(results.ds - results.gt) / Math.min(results.ds, results.gt) * 100;
+    document.getElementById('srcgap').textContent = `The two sources differ from each other by ${srcGap.toFixed(2)}%.`;
+    if (seller != null) {
+      if (srcGap > 2) {
+        verdict.textContent = `No verdict: the two truth sources disagree by ${srcGap.toFixed(2)}% (more than 2%), so no answer could fairly pass. Try again in a minute.`;
+      } else {
+        const worst = Math.max(Math.abs(seller - results.ds) / results.ds, Math.abs(seller - results.gt) / results.gt) * 100;
+        verdict.textContent = worst <= 2 ? `Within 2% of both truth sources (largest gap ${worst.toFixed(2)}%).` : `Outside 2% of at least one truth source (largest gap ${worst.toFixed(2)}%).`;
+      }
+    }
+  } else if (seller != null) {
+    verdict.textContent = 'No verdict: at least one truth source gave no value (see the table).';
   }
-  document.getElementById('when').textContent = `Read at ${when} · chain ${chain} · pool ${pool}`;
+  document.getElementById('when').textContent = `Read at ${nowUTC()} UTC · chain ${chain} · pool ${pool}`;
 };
 </script>
 </body>
