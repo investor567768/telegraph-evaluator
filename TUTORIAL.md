@@ -105,7 +105,7 @@ For liquidity I compared DexScreener with GeckoTerminal on 20 pools across 5 cha
 
 On Anjoman, click **New job**, then **By intent**, choose your Intent, fill in the inputs and click **Ask**. Then read your truth source at the same moment and compare.
 
-[seller-check.html](seller-check.html) does the comparison for liquidity: open it in a browser, pick a pool, paste the Provider's answer, click **Read both sources now**.
+[seller-check page](https://investor567768.github.io/telegraph-evaluator/seller-check.html) does the comparison for liquidity: open it, pick a pool, paste the Provider's answer, click **Read both sources now**.
 
 Use **By intent**. Plain-English questions failed for me 3 times out of 3 on this Intent, while the same pool asked through **By intent** was answered every time.
 

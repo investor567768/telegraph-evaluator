@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Corporate registry: compare 3 GLEIF search methods</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 24px auto; max-width: 1200px; padding: 0 16px; color: #222; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p { color: #555; margin-top: 4px; }
+  button { background: #c2410c; color: #fff; border: 0; border-radius: 6px; padding: 10px 18px; font-size: 15px; cursor: pointer; margin-right: 8px; }
+  button:disabled { opacity: .5; cursor: default; }
+  table { border-collapse: collapse; width: 100%; margin-top: 16px; font-size: 12px; }
+  th, td { border-bottom: 1px solid #ddd; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #f5f5f5; }
+  .none { color: #b91c1c; font-weight: 600; }
+  #status { margin-top: 12px; font-weight: 600; }
+  textarea { width: 100%; height: 120px; margin-top: 12px; font-family: monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Corporate registry: compare 3 search methods</h1>
+<p>Same 20 companies, short and full names, searched 3 ways on GLEIF (country filter on, top 5 kept). Paced slowly to stay under GLEIF's rate limit: about 3 minutes. Read-only, no key.</p>
+<button id="run">Run comparison (120 lookups)</button>
+<button id="copy" disabled>Copy results</button>
+<div id="status"></div>
+<table>
+  <thead><tr><th>#</th><th>Input</th><th>Method</th><th>Hits</th><th>First result</th><th>Results 2 to 5</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<textarea id="out" readonly placeholder="Results appear here after the run"></textarea>
+<script>
+const companies = [
+  ["US","Apple","Apple Inc."],
+  ["US","Microsoft","Microsoft Corporation"],
+  ["US","Tesla","Tesla, Inc."],
+  ["NG","Dangote Cement","Dangote Cement Plc"],
+  ["NG","MTN Nigeria","MTN Nigeria Communications Plc"],
+  ["NG","Zenith Bank","Zenith Bank Plc"],
+  ["DE","Siemens","Siemens Aktiengesellschaft"],
+  ["DE","BASF","BASF SE"],
+  ["GB","Unilever","Unilever PLC"],
+  ["GB","BP","BP p.l.c."],
+  ["GB","Shell","Shell plc"],
+  ["JP","Toyota","Toyota Motor Corporation"],
+  ["JP","Sony","Sony Group Corporation"],
+  ["CH","Nestle","Nestlé S.A."],
+  ["FR","TotalEnergies","TotalEnergies SE"],
+  ["KR","Samsung Electronics","Samsung Electronics Co., Ltd."],
+  ["IN","Infosys","Infosys Limited"],
+  ["KE","Safaricom","Safaricom PLC"],
+  ["ZA","Naspers","Naspers Limited"],
+  ["BR","Petrobras","Petróleo Brasileiro S.A. - Petrobras"]
+];
+const methods = [
+  ["legalName", "filter[entity.legalName]"],
+  ["names", "filter[entity.names]"],
+  ["fulltext", "filter[fulltext]"]
+];
+const results = [];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function nameOf(d) {
+  const e = d.attributes.entity;
+  const others = (e.otherNames || []).concat(e.transliteratedOtherNames || []).map(o => o.name).slice(0, 2);
+  return { lei: d.attributes.lei, legal_name: e.legalName && e.legalName.name, other: others,
+           registration_id: e.registeredAs, status: e.status, jurisdiction: e.jurisdiction };
+}
+async function lookup(param, name, cc) {
+  const u = "https://api.gleif.org/api/v1/lei-records?" + param + "=" + encodeURIComponent(name) +
+            "&filter[entity.legalAddress.country]=" + cc + "&page[size]=5";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await fetch(u, { headers: { "Accept": "application/vnd.api+json" } });
+      if (r.status === 429) { await sleep(20000); continue; }
+      if (!r.ok) return { error: "HTTP " + r.status };
+      const j = await r.json();
+      const total = j.meta && j.meta.pagination ? j.meta.pagination.total : (j.data || []).length;
+      return { hits: total, top: (j.data || []).map(nameOf) };
+    } catch (err) { return { error: String(err) }; }
+  }
+  return { error: "HTTP 429 (rate limited 3 times)" };
+}
+function addRow(n, input, method, r) {
+  const tr = document.createElement("tr");
+  const first = r.error ? r.error : (r.top && r.top[0] ? r.top[0].legal_name + (r.top[0].other.length ? " (also: " + r.top[0].other.join("; ") + ")" : "") : "no result");
+  const rest = r.top ? r.top.slice(1).map(t => t.legal_name).join(" | ") : "";
+  [n, input, method, r.error ? "error" : r.hits, first, rest].forEach((c, i) => {
+    const td = document.createElement("td"); td.textContent = c;
+    if (i === 4 && !(r.top && r.top[0])) td.className = "none"; tr.appendChild(td); });
+  document.getElementById("rows").appendChild(tr);
+}
+document.getElementById("run").onclick = async () => {
+  const btn = document.getElementById("run"); btn.disabled = true;
+  document.getElementById("rows").innerHTML = ""; results.length = 0;
+  let i = 0, done = 0;
+  for (const [cc, short, full] of companies) {
+    i++;
+    for (const [kind, input] of [["short", short], ["full", full]]) {
+      for (const [mname, param] of methods) {
+        done++;
+        document.getElementById("status").textContent = "Lookup " + done + " of 120: " + input + " (" + mname + ")";
+        const r = await lookup(param, input, cc);
+        results.push(Object.assign({ n: i, country: cc, kind, input, method: mname }, r));
+        addRow(i, input, mname, r);
+        await sleep(1200);
+      }
+    }
+  }
+  const stamp = new Date().toISOString();
+  document.getElementById("status").textContent = "Done at " + stamp + " UTC. Click Copy results and paste them to Claude.";
+  document.getElementById("out").value = JSON.stringify({ run_at: stamp, results });
+  document.getElementById("copy").disabled = false; btn.disabled = false;
+};
+document.getElementById("copy").onclick = async () => {
+  const t = document.getElementById("out"); t.select();
+  try { await navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand("copy"); }
+  document.getElementById("status").textContent = "Copied. Paste it into the chat.";
+};
+</script>
+</body>
+</html>

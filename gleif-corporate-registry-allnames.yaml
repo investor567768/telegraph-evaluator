@@ -1,0 +1,54 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-gleif-corporate-registry-allnames
+name: GLEIF Legal Entity Identifier registry (all names)
+description: Free, public, no-key API of the Global Legal Entity Identifier Foundation (GLEIF), the official global register of legal entities, sourced from national business registers. Returns legal name, national registration number, entity status, jurisdiction, registered (legal) address and creation date. Searches the legal name and the registered other names, including the English names GLEIF stores for companies whose legal name is in another script (for example Japanese, Korean or Cyrillic). In a 20-company test across 13 countries, full legal names found the right entity 18 times out of 20 and never returned a different entity; short names such as "Siemens" can return a related fund or subsidiary, so a full legal name or a registration number gives the most reliable answer. Only entities that hold an LEI are covered.
+base_url: https://api.gleif.org
+auth:
+  type: none
+endpoints:
+- path: /corporate-lookup
+  external_path: /api/v1/lei-records
+  method: GET
+  description: Looks up a legal entity by legal or other registered name within a country. The best match is the first record, data.0. Fields are under data.0.attributes.entity. If nothing matches, data is an empty list, so the answer is missing rather than wrong.
+  intents:
+  - CORPORATE_REGISTRY_LOOKUP_GENERAL
+  params:
+    query:
+      required:
+      - name: filter[entity.names]
+        type: string
+        intents: ['*']
+        description: Company full legal name in English or the local language, including the legal form, for example "Tesla, Inc." or "Toyota Motor Corporation".
+      - name: filter[entity.legalAddress.country]
+        type: string
+        intents: ['*']
+        description: ISO 3166-1 alpha-2 country code in upper case, for example US, GB, NG, DE.
+      - name: page[size]
+        type: string
+        intents: ['*']
+        description: Always 1, so only the best match is returned.
+intent_mapping:
+  CORPORATE_REGISTRY_LOOKUP_GENERAL:
+    endpoint: /corporate-lookup
+    input:
+      filter[entity.names]:
+        from: company
+        how: "The company's full registered legal name including its legal form, without accents. If the input is a short or brand name and the full legal name is well known, use the full legal name. Examples: Apple -> Apple Inc. Siemens -> Siemens Aktiengesellschaft. BASF -> BASF SE. Shell -> Shell plc. Toyota -> Toyota Motor Corporation. Petrobras -> Petroleo Brasileiro S A Petrobras. If unsure, keep the name exactly as given."
+      filter[entity.legalAddress.country]:
+        from: jurisdiction
+        how: "ISO 3166-1 alpha-2 country code in upper case. Examples: United States, USA, US, Texas, Delaware -> US. United Kingdom, UK, England -> GB. Nigeria -> NG. Germany -> DE. France -> FR. India -> IN. Canada -> CA."
+      page[size]:
+        from: company
+        how: "Always the literal value 1, whatever the input."
+    output:
+      legal_name: { path: data.0.attributes.entity.legalName.name }
+      registration_id: { path: data.0.attributes.entity.registeredAs }
+      active: { path: data.0.attributes.entity.status }
+      jurisdiction: { path: data.0.attributes.entity.jurisdiction }
+      registered_address: { path: data.0.attributes.entity.legalAddress }
+      incorporated: { path: data.0.attributes.entity.creationDate }
+semantics:
+  supported_intents:
+  - CORPORATE_REGISTRY_LOOKUP_GENERAL

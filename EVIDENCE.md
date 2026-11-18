@@ -52,14 +52,16 @@ Screenshots: [DexScreener](live-test-3-dexscreener.png), [GeckoTerminal](live-te
 
 What this shows:
 1. **The seller is within 1% of both truth sources.** Under a 2% tolerance (the agreement band found in the 20-pool baseline) this answer passes.
-2. **The seller's answer includes a stale input.** One of its three readings, $77,611,767.99, is identical to the figure it gave 22 minutes earlier (Q4), while both truth sources had moved. Averaging in a stale reading pulled its answer up. A fresh truth source is what makes this visible: the seller's other reading, $76,868,432.13, matches GeckoTerminal exactly.
+2. **The seller's answer includes a stale input.** One of its three readings, $77,611,767.99, is identical to the figure it gave 22 minutes earlier (Q4), while both truth sources had moved. Averaging in a stale reading pulled its answer up. A fresh truth source is what makes this visible: the seller's other reading, $76,868,432.13, matches GeckoTerminal exactly. (18 Nov: PREFLIGHT's developer reports the averaging happened in Telegraph's routing layer, not his miner; see the correction below.)
 3. **Free-text requests failed; structured requests succeeded.** The same question failed 3 of 3 times without the intent chosen and succeeded 2 of 2 times with it. The failure is in turning the question into inputs, not in the seller. To be reported on the Telegraph feedback channel.
 4. **The intent's own checker and its declared output disagree.** The New job form says this intent returns `liquidity_usd`. Telegraph's checker marked both answers "not established" because they did not include bid-ask depth or slippage. These truth sources cover `liquidity_usd` only (see limits).
 
 Limits: one pool per chain, one seller (routing chose the same Miner every time), one afternoon. This is a live spot check, not a ranking study.
 
 ## Live test across five chains (16 Nov 2026)
-Same method on one large pool per chain: ask with the intent chosen, then read both truth sources with [seller-check.html](seller-check.html) within about two minutes. Raw rows: [live-seller-test-2026-11-16.tsv](live-seller-test-2026-11-16.tsv). Every request was routed to PREFLIGHT Infrastructure Signals.
+Same method on one large pool per chain: ask with the intent chosen, then read both truth sources with [seller-check.html](https://investor567768.github.io/telegraph-evaluator/seller-check.html) within about two minutes. Raw rows: [live-seller-test-2026-11-16.tsv](live-seller-test-2026-11-16.tsv). Every request was routed to PREFLIGHT Infrastructure Signals.
+
+> **Correction (18 Nov 2026):** PREFLIGHT's developer reports that the Polygon blank and the averaged readings below came from Telegraph's routing layer, not his miner: all seven of his miner's direct answers for that pool on 16 Nov had the number. So these are outcomes of the Telegraph answer a buyer receives, not faults of this Provider. Source: [his message](https://discord.com/channels/1438396125609463881/1498654113376899112/1572564331273396247); see also [TESTERS.md](TESTERS.md).
 
 | Chain | Seller answer (USD) | DexScreener | GeckoTerminal | vs DexScreener | vs GeckoTerminal | Screenshots |
 |---|---|---|---|---|---|---|
