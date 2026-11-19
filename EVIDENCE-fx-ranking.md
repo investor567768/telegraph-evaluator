@@ -1,36 +1,51 @@
-# FX_NOW_EUR: Telegraph's top-ranked answer vs the truth source (18 Nov 2026)
+# FX_NOW_EUR: how Telegraph ranks EUR miners (18 to 19 Nov 2026)
 
-Network: Telegraph testnet. Times UTC. `FX_NOW_EUR` asks for the euro priced in US dollars: **US dollars per 1 euro**. The truth sources here ([frankfurter-fx.yaml](frankfurter-fx.yaml), European Central Bank; [open-er-api-fx.yaml](open-er-api-fx.yaml)) answer that directly.
+Network: Telegraph testnet. Times UTC unless marked Lagos (UTC+1).
 
-## The live job
-- **16:04 UTC**, "By intent" form, `FX_NOW_EUR`, currency `EUR`.
-- Routed to **Coinbase FX Now** (miner id 31009), in 0.4 s, for $0.01 of test funds.
-- Answer: EUR as the base currency at a rate of **1.0**, plus unrelated rates (for example ADA 7.27, AED 4.03). **No US-dollar price of the euro was delivered.** Anjoman marked the job "partly done", while its trail also shows "Checked the result: Result verified".
-- Shared receipt with the full signal hash: https://anjoman.ai/shared/O4CJgFdb4GakfOvGmJj1IQ (`0xebfc75ec31812b9234b8fc8edbed836ee4c1cb5f8ac80aea9a986c361c58f400`). Screenshots: [answer](live-job-fx-eur-coinbase-answer.png), [receipt](live-job-fx-eur-coinbase-receipt.png).
-- **Truth source at the same time: 1.0989 US dollars per euro** (ECB rate of 17 Nov, via Frankfurter) ([screenshot](live-truth-eur-usd.png)).
+> **Correction (19 Nov 2026).** The first version of this page (18 Nov) said several miners report the rate "upside down" and are about 17% off. That was wrong. The official Intent definition allows either direction: "the live mid-market rate between the US dollar and the euro (USD/EUR or EUR/USD)" (organizers' `catalog/intents.json`). A miner answering 0.9117 euros per dollar and one answering 1.0968 dollars per euro are both giving a valid rate. The findings below are the ones that hold.
 
-This is the same 1.0 figure seen on 17 Nov ([EVIDENCE-fx.md](EVIDENCE-fx.md)).
+## 1. The direction of the answer is not defined, and that affects scoring
+- The Intent catalog allows **USD/EUR or EUR/USD**.
+- Anjoman's request form describes the input as a currency "priced against the US dollar", which suggests dollars per euro (about 1.10).
+- Every EUR miner whose manifest we read stores **euros per dollar** (about 0.91): Fx Frankfurter, Coinbase FX Now, Open ER-API FX Now, ExchangeRate-API v4 FX Now; A1 Preflight returns 0.9117 as `rate` and 1.0968 as `inverse_rate` ([screenshot](live-a1-preflight-fx.png)).
+- Our own truth source ([frankfurter-fx.yaml](frankfurter-fx.yaml)) reports **dollars per euro** (1.0989 on 17 Nov ECB data).
 
-## How Telegraph ranked that miner
-On the Anjoman leaderboard for `FX_NOW_EUR`, Coinbase FX Now was **#11 (0.710) in epoch 10** and **#1 (0.990) in epoch 11**, with no change to its configuration ([history](coinbase-scoring-history.png)). The scoring detail rows show the headings "Question", "Ground truth" and "Miner answer (converted)" with nothing under them ([screenshot](coinbase-scoring-detail-empty.png)), so the score cannot be checked from the page.
+So a reference in one direction marks every correct answer in the other direction as about 17% wrong. Until the Intent fixes one direction, any scoring that compares a single number cannot be fair to both. **Suggested fix:** state the direction in the Intent (for example "US dollars per 1 euro") or accept a value and its inverse.
 
-## Two miners, same value, different ranks
-Each miner's published manifest says what it calls. Called live at about 15:43 UTC:
+## 2. Telegraph's #1-ranked miner gave an answer that is wrong in either direction
+- **18 Nov 16:04 UTC**, "By intent" form, `FX_NOW_EUR`, currency `EUR`, routed to **Coinbase FX Now** (miner 31009), then ranked #1 (0.990), 0.4 s, $0.01 of test funds.
+- Answer: EUR as the base currency at a rate of **1.0** (euros per euro), plus unrelated rates (ADA 7.27, AED 4.03). Neither 0.91 nor 1.10 was delivered. Anjoman marked the job "partly done", while its trail also shows "Checked the result: Result verified".
+- Shared receipt with full signal hash: https://anjoman.ai/shared/O4CJgFdb4GakfOvGmJj1IQ (`0xebfc75ec31812b9234b8fc8edbed836ee4c1cb5f8ac80aea9a986c361c58f400`). Screenshots: [answer](live-job-fx-eur-coinbase-answer.png), [receipt](live-job-fx-eur-coinbase-receipt.png).
+- The same 1.0 figure was seen on 17 Nov ([EVIDENCE-fx.md](EVIDENCE-fx.md)).
 
-| Miner (leaderboard, latest epoch at 16:34 Lagos) | What its manifest calls | Value it stores | Truth (USD per EUR) |
-|---|---|---|---|
-| Fx Frankfurter (#3, 1.000) | `api.frankfurter.app/latest?from=USD&to=EUR` | `rates.EUR` = 0.91174 (euros per dollar) ([screenshot](live-frankfurter-usd-eur.png)) | 1.0989 |
-| Coinbase FX Now (#11 at that time, 0.710) | `api.coinbase.com/v2/exchange-rates?currency=USD` | `rates.EUR` = 0.91191 (euros per dollar) ([screenshot](live-coinbase-usd.png)) | 1.0989 |
+## 3. Same value, very different scores
+Both manifests store `rates.EUR` from a USD base. Called live at about 15:43 UTC on 18 Nov:
 
-Both store the **inverse** quantity (euros per dollar), about 17% below the asked-for value, and agree with each other to 0.02%, yet scored 1.000 and 0.710. Leaderboard: [page 1](leaderboard-fx-eur-p1a.png), [page 1 continued](leaderboard-fx-eur-p1b.png), [page 2](leaderboard-fx-eur-p2.png); raw list [leaderboard-fx-eur-2026-11-18.tsv](leaderboard-fx-eur-2026-11-18.tsv).
+| Miner | Leaderboard score (18 Nov, latest epoch) | Value its manifest stores |
+|---|---|---|
+| Fx Frankfurter | 1.000 (#3) | 0.91174 ([screenshot](live-frankfurter-usd-eur.png)) |
+| Coinbase FX Now | 0.710 (#11) | 0.91191 ([screenshot](live-coinbase-usd.png)) |
 
-A miner reporting a completely different quantity, CBR FX Now (roubles per US dollar), was scored 0.000, so the ranking does catch some wrong answers.
+The values are 0.02% apart; the scores are 1.000 and 0.710.
 
-## What this shows
-- The highest-ranked `FX_NOW_EUR` miner at the time delivered no usable answer through Telegraph, and the truth source gives the right value at the same moment.
-- Scores on this Intent moved sharply between epochs without a configuration change, and two miners storing the same inverted value received very different scores.
+## 4. Ranks swing between epochs without configuration changes
+
+| Miner | 18 Nov (epoch 10/11) | 19 Nov 06:23 UTC |
+|---|---|---|
+| Coinbase FX Now | #11 (0.710) in epoch 10, **#1 (0.990)** in epoch 11 ([history](coinbase-scoring-history.png)) | not in top 8 |
+| Open ER-API FX Now | #7 (0.920) | **#1 (1.000)** |
+| ExchangeRate-API v4 | #9 (0.900) | #2 (0.970) |
+| A1 Preflight | #1 (1.000) | #3 (0.960) |
+| Fx Frankfurter | #3 (1.000) | #5 (0.960) |
+
+Leaderboard snapshots: 18 Nov [page 1](leaderboard-fx-eur-p1a.png), [continued](leaderboard-fx-eur-p1b.png), [page 2](leaderboard-fx-eur-p2.png), raw list [leaderboard-fx-eur-2026-11-18.tsv](leaderboard-fx-eur-2026-11-18.tsv); 19 Nov [snapshot](leaderboard-fx-eur-2026-11-19.png).
+
+## 5. Scores cannot be checked from Anjoman
+Each scoring row has the headings "Question", "Ground truth" and "Miner answer (converted)", all empty ([screenshot](coinbase-scoring-detail-empty.png)). A buyer or evaluator cannot see what a miner was compared against.
+
+A miner reporting a different quantity altogether, CBR FX Now (roubles per US dollar), scored 0.000, so the ranking does catch some wrong answers.
 
 ## Limits
-- One live job; routing chose the miner. The Frankfurter miner's value is from its manifest's own call, not observed through Telegraph.
-- How the node converts a miner's stored value before scoring is not shown on Anjoman, so the cause of the score differences is not established here.
-- The leaderboard is a snapshot taken 18 Nov at about 15:34 UTC.
+- One live job through Telegraph; routing chose the miner. Other miners' values come from calling what their manifests call, not from answers observed through Telegraph.
+- How the node converts a stored value before scoring is not shown, so the cause of the score differences is not established here.
+- Leaderboard snapshots are from 18 Nov about 15:34 UTC and 19 Nov 06:23 UTC.
