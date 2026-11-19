@@ -2,7 +2,7 @@
 
 Track: Evaluators. Network: Telegraph testnet. Everything below can be checked without a wallet or any sign-up, except step 2, which needs a free Anjoman sign-in.
 
-> Demo video: _to be added._
+> Demo video (3 min): [on X](https://x.com/kingChrys494/status/2123346766846206144) · [file in this repo](demo.mp4)
 >
 > Independent testers and what they changed: [TESTERS.md](TESTERS.md).
 

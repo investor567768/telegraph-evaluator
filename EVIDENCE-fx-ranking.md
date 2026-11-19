@@ -45,6 +45,17 @@ Each scoring row has the headings "Question", "Ground truth" and "Miner answer (
 
 A miner reporting a different quantity altogether, CBR FX Now (roubles per US dollar), scored 0.000, so the ranking does catch some wrong answers.
 
+## 6. Day-2 live checks (19 Nov 2026)
+Plain-language requests on Anjoman, Multi-miner ON. Times UTC.
+
+| Time | Request | Intent detected | Miner | Answer | Correct? |
+|---|---|---|---|---|---|
+| 06:57 | "What is the current USD/CAD mid-market rate?" | FX_NOW_CAD | PREFLIGHT | 1.4305 CAD per USD (ECB, 18 Nov), direction stated | yes |
+| 06:58 | "What is the current USD/SEK mid-market rate?" | FX_NOW_SEK | PREFLIGHT | 10.1596 SEK per USD (ECB, 18 Nov), direction stated | yes |
+| 07:01 | "What is the current EUR/USD mid-market rate?" | FX_NOW_EUR | Open ER-API FX Now | "0.91125 USD per EUR ... 1 EUR is worth approximately 0.91125 USD", while also stating the miner reported 1 EUR = 1.097391 USD | **no** |
+
+The EUR miner's value was right; the final answer inverted it and labelled the inverse as US dollars per euro, which is false in either direction (1 EUR is about 1.097 USD). Same pattern as 17 Nov, when a correct 1.10 was delivered as 1.00. Shared receipt: https://anjoman.ai/shared/lX7bbMWdryNalDOmB_EzKg. Screenshots: [CAD](live-job-fx-cad-2026-11-19.png), [SEK](live-job-fx-sek-2026-11-19.png), [EUR](live-job-fx-eur-2026-11-19.png). CAD and SEK leaderboards on 19 Nov: the same seven miners at 1.000 on both ([CAD](leaderboard-fx-cad-2026-11-19.png), [SEK](leaderboard-fx-sek-2026-11-19.png)).
+
 ## Limits
 - One live job through Telegraph; routing chose the miner. Other miners' values come from calling what their manifests call, not from answers observed through Telegraph.
 - How the node converts a stored value before scoring is not shown, so the cause of the score differences is not established here.
