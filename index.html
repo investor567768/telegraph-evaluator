@@ -1,112 +1,293 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Telegraph Evaluator: truth sources by Chrysolite</title>
-<meta name="description" content="Public truth sources that Telegraph uses to score miners: CVE severity scores, observed weather, FX, macro indicators, company registries and DeFi liquidity.">
+<meta name="description" content="Public truth sources that Telegraph uses to score miners: CVE severity scores, observed weather, airport disruption, FX, macro indicators, company registries and DeFi liquidity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0e1116; --card:#161b22; --line:#2a313c; --text:#e6edf3; --muted:#9aa4b2; --accent:#4cc38a; --warn:#e5a50a; --bad:#f05d5e; }
+  :root, [data-theme="dark"] {
+    --bg:#0e1116; --bg-glow:rgba(76,195,138,.17);
+    --surface:#161b22; --surface-2:#1d242d; --line:#2a313c; --line-2:#3a4350;
+    --text:#e6edf3; --muted:#9aa4b2; --accent:#4cc38a; --accent-ink:#06120c;
+    --ok:#4cc38a; --ok-bg:rgba(76,195,138,.15); --bad:#f05d5e; --bad-bg:rgba(240,93,94,.15); --warn:#e5a50a;
+    --shadow:0 20px 50px -26px rgba(0,0,0,.8);
+  }
+  [data-theme="light"] {
+    --bg:#f4f8f6; --bg-glow:rgba(18,135,90,.13);
+    --surface:#ffffff; --surface-2:#eef4f1; --line:#dde6e1; --line-2:#c7d3cd;
+    --text:#0f1a15; --muted:#52615a; --accent:#12875a; --accent-ink:#fff;
+    --ok:#12875a; --ok-bg:rgba(18,135,90,.11); --bad:#d33b3b; --bad-bg:rgba(211,59,59,.10); --warn:#a96b00;
+    --shadow:0 20px 50px -30px rgba(20,60,40,.35);
+  }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
-  main { max-width:960px; margin:0 auto; padding:40px 20px 64px; }
-  h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
-  h2 { font-size:20px; margin:40px 0 12px; }
-  p { margin:0 0 12px; }
-  .muted { color:var(--muted); }
+  html { scroll-behavior:smooth; scroll-padding-top:76px; }
+  body { margin:0; background:var(--bg); color:var(--text); font:400 16.5px/1.6 'Geist',system-ui,-apple-system,'Segoe UI',sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; transition:background .25s,color .25s; }
   a { color:var(--accent); }
-  .stats { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0 8px; }
-  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; min-width:150px; }
-  .stat b { display:block; font-size:24px; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  @media (max-width:760px){ .grid { grid-template-columns:1fr; } }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
-  .card h3 { margin:0 0 4px; font-size:17px; }
-  .tag { display:inline-block; font:12px/1 ui-monospace,Consolas,monospace; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:4px 6px; margin:2px 4px 2px 0; }
-  form { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 10px; }
-  input { flex:1; min-width:120px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 10px; font:inherit; }
-  button { background:var(--accent); color:#06120c; border:0; border-radius:8px; padding:9px 14px; font-weight:600; cursor:pointer; }
-  button:disabled { opacity:.6; cursor:wait; }
-  .out { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px; min-height:64px; font-size:14px; }
-  .out .big { font-size:22px; font-weight:700; }
+  :focus-visible { outline:3px solid var(--accent); outline-offset:3px; border-radius:8px; }
+  .wrap { max-width:1060px; margin:0 auto; padding:0 20px; }
+  h1,h2,h3 { margin:0; letter-spacing:-.025em; line-height:1.1; }
+  h2 { font-size:clamp(1.7rem,4.6vw,2.4rem); font-weight:700; margin-bottom:10px; }
+  h3 { font-size:1.08rem; font-weight:600; letter-spacing:-.01em; }
+  p { margin:0 0 12px; max-width:64ch; }
+  .muted { color:var(--muted); }
+  code, .mono { font-family:'Geist Mono',ui-monospace,Consolas,monospace; }
+
+  /* app bar */
+  .appbar { position:sticky; top:0; z-index:20; backdrop-filter:blur(14px); background:color-mix(in srgb,var(--bg) 82%,transparent); border-bottom:1px solid var(--line); }
+  .appbar .in { display:flex; align-items:center; justify-content:space-between; gap:12px; height:60px; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:-.02em; color:var(--text); text-decoration:none; }
+  .logo { width:28px; height:28px; border-radius:8px; background:var(--accent); display:grid; place-items:center; color:var(--accent-ink); font-weight:800; font-size:.95rem; }
+  .nav { display:flex; align-items:center; gap:4px; }
+  .nav a { color:var(--muted); text-decoration:none; padding:8px 12px; border-radius:10px; font-size:.94rem; font-weight:500; }
+  .nav a:hover { color:var(--text); background:var(--surface); }
+  .theme { appearance:none; border:1px solid var(--line-2); background:var(--surface); color:var(--text); border-radius:10px; padding:8px 12px; font:500 .9rem 'Geist',sans-serif; cursor:pointer; display:flex; gap:8px; align-items:center; }
+  .theme:hover { border-color:var(--accent); }
+  @media (max-width:640px){ .nav a.opt { display:none; } }
+
+  /* hero */
+  .hero { position:relative; padding:40px 0 36px; }
+  .hero::before { content:""; position:absolute; inset:-60px 0 auto 0; height:480px; background:radial-gradient(600px 300px at 80% 20%, var(--bg-glow), transparent 70%); pointer-events:none; }
+  .hero > * { position:relative; }
+  .pill-top { display:inline-flex; gap:8px; align-items:center; border:1px solid var(--line-2); background:var(--surface); padding:6px 12px; border-radius:999px; font-size:.85rem; color:var(--muted); margin-bottom:18px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); }
+  h1 { font-size:clamp(2rem,5.6vw,3.4rem); font-weight:800; letter-spacing:-.035em; max-width:18ch; }
+  .lede { font-size:1.05rem; color:var(--muted); margin:16px 0 22px; }
+  .btns { display:flex; flex-wrap:wrap; gap:10px; }
+  .btn { display:inline-block; padding:12px 18px; border-radius:12px; font:600 .98rem 'Geist',sans-serif; text-decoration:none; border:1px solid var(--line-2); color:var(--text); background:var(--surface); }
+  .btn:hover { border-color:var(--accent); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); box-shadow:0 10px 28px -12px var(--accent); }
+  .btn.primary:hover { filter:brightness(1.08); }
+  .strip { display:grid; grid-template-columns:repeat(3,1fr); margin-top:28px; background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .strip div { padding:14px 14px; border-right:1px solid var(--line); }
+  .strip div:last-child { border-right:0; }
+  .strip strong { display:block; font-size:clamp(1.05rem,4.4vw,1.5rem); font-weight:700; letter-spacing:-.02em; }
+  .strip span { color:var(--muted); font-size:.82rem; line-height:1.35; display:block; }
+
+  section.block { padding:56px 0; border-top:1px solid var(--line); }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; box-shadow:var(--shadow); }
+  .grid3 { display:grid; gap:16px; grid-template-columns:1fr; margin-top:22px; }
+  @media (min-width:900px){ .grid3 { grid-template-columns:repeat(3,1fr); } }
+
+  /* checkers */
+  .chk h3 { margin-bottom:6px; }
+  .chk > p { font-size:.95rem; color:var(--muted); }
+  .chips-i { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 14px; }
+  .tag { font:500 .72rem 'Geist Mono',monospace; color:var(--muted); border:1px solid var(--line-2); border-radius:6px; padding:4px 7px; }
+  form { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+  input { flex:1 1 140px; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line-2); border-radius:12px; padding:12px 13px; font:400 1rem 'Geist',sans-serif; }
+  input::placeholder { color:var(--muted); }
+  .go { background:var(--accent); color:var(--accent-ink); border:0; border-radius:12px; padding:12px 18px; font:600 1rem 'Geist',sans-serif; cursor:pointer; flex:1 1 100%; }
+  @media (min-width:900px){ .go { flex:none; } }
+  .go:hover { filter:brightness(1.08); }
+  .go:disabled { opacity:.6; cursor:wait; }
+  .ex { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .chip { background:transparent; border:1px solid var(--line-2); color:var(--muted); border-radius:999px; padding:5px 11px; font:500 .84rem 'Geist',sans-serif; cursor:pointer; }
+  .chip:hover { color:var(--text); border-color:var(--accent); }
+  .out { background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:14px; min-height:84px; font-size:.93rem; overflow-wrap:anywhere; }
+  .out .big { font-size:1.35rem; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
+  .out .big.ok { color:var(--ok); } .out .big.bad { color:var(--bad); }
   .out .err { color:var(--bad); }
-  .out pre { margin:8px 0 0; white-space:pre-wrap; word-break:break-word; font:12px/1.45 ui-monospace,Consolas,monospace; color:var(--muted); }
-  table { width:100%; border-collapse:collapse; font-size:15px; }
-  th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { color:var(--muted); font-weight:600; font-size:13px; }
-  code { font:13px ui-monospace,Consolas,monospace; }
-  footer { margin-top:48px; color:var(--muted); font-size:14px; }
+  .out details { margin-top:10px; }
+  .out summary { cursor:pointer; color:var(--muted); font-size:.85rem; }
+  .out pre { margin:8px 0 0; white-space:pre-wrap; word-break:break-word; font:400 .76rem/1.5 'Geist Mono',monospace; color:var(--muted); }
+
+  /* source cards */
+  .src { display:grid; gap:14px; grid-template-columns:1fr; margin-top:22px; }
+  @media (min-width:760px){ .src { grid-template-columns:1fr 1fr; } }
+  .s { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:8px; }
+  .s h3 { font-size:1.05rem; }
+  .s .ref { color:var(--muted); font-size:.93rem; margin:0; }
+  .s .intents { display:flex; flex-wrap:wrap; gap:6px; }
+  .s .try { margin-top:auto; align-self:flex-start; display:inline-flex; gap:6px; align-items:center; padding:9px 14px; border:1px solid var(--line-2); border-radius:10px; color:var(--text); text-decoration:none; font-weight:600; font-size:.92rem; background:var(--surface-2); }
+  .s .try:hover { border-color:var(--accent); }
+  .s .try i { font-style:normal; color:var(--accent); }
+
+  /* fold */
+  details.fold { background:var(--surface); border:1px solid var(--line); border-radius:18px; }
+  details.fold > summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:14px; padding:20px 22px; font-size:clamp(1.2rem,3.6vw,1.6rem); font-weight:700; letter-spacing:-.02em; }
+  details.fold > summary::-webkit-details-marker { display:none; }
+  details.fold > summary::after { content:""; flex:none; width:11px; height:11px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(45deg); transition:transform .25s; margin-right:4px; }
+  details.fold[open] > summary::after { transform:rotate(-135deg); }
+  .fold-body { padding:0 22px 22px; }
+  .ep { display:flex; gap:8px; align-items:stretch; margin-top:10px; }
+  .ep code { flex:1; min-width:0; overflow-x:auto; white-space:nowrap; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.8rem; }
+  .copy { flex:none; background:var(--surface-2); color:var(--text); border:1px solid var(--line-2); border-radius:10px; padding:0 14px; font:600 .88rem 'Geist',sans-serif; cursor:pointer; }
+  .copy:hover { border-color:var(--accent); }
+
+  footer { padding:36px 0 60px; border-top:1px solid var(--line); color:var(--muted); font-size:.92rem; }
+  .foot-links { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+  .foot-links a { display:inline-flex; gap:8px; align-items:center; padding:10px 14px; border:1px solid var(--line-2); border-radius:12px; color:var(--text); text-decoration:none; font-weight:600; font-size:.95rem; background:var(--surface); }
+  .foot-links a:hover { border-color:var(--accent); }
+  .foot-links a span { color:var(--accent); }
+
+  /* scroll reveal */
+  .js .rv { opacity:0; transform:translateY(20px); transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); transition-delay:var(--d,0s); }
+  .js .rv.in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } .js .rv { opacity:1; transform:none; transition:none; } }
 </style>
 </head>
 <body>
-<main>
-  <h1>Telegraph Evaluator: truth sources</h1>
-  <p class="muted">Telegraph scores its miners by comparing their answers with a trusted reference. These are the references I contribute: public, keyless sources that give one checkable answer, and that return an error rather than a guess when they cannot.</p>
-  <p class="muted">Built by Chrysolite for Telegraph Hackathon Season II, Evaluators track. Code: <a href="https://github.com/investor567768/telegraph-evaluator">github.com/investor567768/telegraph-evaluator</a></p>
 
-  <div class="stats">
-    <div class="stat"><b>15 of 15</b><span class="muted">hackathon missions covered</span></div>
-    <div class="stat"><b>All accepted</b><span class="muted">by Telegraph's evaluator pools</span></div>
-    <div class="stat"><b>No API key</b><span class="muted">needed for any source</span></div>
+<header class="appbar">
+  <div class="wrap in">
+    <a class="brand" href="#top"><span class="logo">E</span><b>Telegraph <span class="long">Evaluator</span></b></a>
+    <nav class="nav" aria-label="Page">
+      <a class="opt" href="#checkers">Live checkers</a>
+      <a class="opt" href="#sources">All sources</a>
+      <button class="theme" id="theme" type="button" aria-label="Switch between dark and light mode"><span id="themeIcon">☀</span><span id="themeText">Light</span></button>
+    </nav>
   </div>
+</header>
 
-  <h2>Try the live checkers</h2>
-  <div class="grid">
-    <section class="card">
-      <h3>CVE severity score</h3>
-      <p class="muted">Official CVSS base score for a vulnerability. NIST's own score first; if NIST hasn't scored it yet, the reporting organisation's score from the official CVE record.</p>
-      <span class="tag">CVE_LOOKUP_CVSS</span><span class="tag">VULNERABILITY_TRIAGE_GENERAL</span>
-      <form id="cve-form">
-        <input id="cve-id" value="CVE-2021-44228" aria-label="CVE ID">
-        <button>Check</button>
-      </form>
-      <div class="out" id="cve-out"><span class="muted">Try CVE-2021-44228 (Log4Shell) or CVE-2024-3094 (xz backdoor).</span></div>
-    </section>
-
-    <section class="card">
-      <h3>What the weather actually was</h3>
-      <p class="muted">A past day's high, low, rainfall and main weather at a named place, the side an old forecast is checked against. Any day back to 1940, in the place's own time zone.</p>
-      <span class="tag">WEATHER_FORECAST_VERIFY_GENERAL</span>
-      <form id="wx-form">
-        <input id="wx-place" value="Lagos" aria-label="Place">
-        <input id="wx-date" type="date" aria-label="Date">
-        <button>Check</button>
-      </form>
-      <div class="out" id="wx-out"><span class="muted">Try "Lagos" and "Lagos, Portugal": same name, different place.</span></div>
-    </section>
-
-    <section class="card">
-      <h3>US airport disruption right now</h3>
-      <p class="muted">Ground stops, ground delay programs, arrival and departure delays and closures at US airports, live from the FAA. A route counts as disrupted if any airport on it is.</p>
-      <span class="tag">TRAVEL_DISRUPTION_GENERAL</span>
-      <form id="tr-form">
-        <input id="tr-q" value="JFK-ATL" aria-label="Airport, route or flight">
-        <button>Check</button>
-      </form>
-      <div class="out" id="tr-out"><span class="muted">Try an airport (SFO), a route (JFK-ATL) or a flight with its airport (DL404 at ATL).</span></div>
-    </section>
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <span class="pill-top"><span class="dot"></span>Telegraph Hackathon Season II · Evaluators</span>
+    <h1>Truth sources Telegraph can score miners against.</h1>
+    <p class="lede">Telegraph scores its miners by comparing their answers with a trusted reference. These are the references I contribute: public, keyless sources that give one checkable answer, and that return an error rather than a guess when they cannot.</p>
+    <div class="btns">
+      <a class="btn primary" href="#checkers">Try the live checkers</a>
+      <a class="btn" href="#sources">See all sources</a>
+    </div>
+    <div class="strip">
+      <div><strong>15 of 15</strong><span>missions covered</span></div>
+      <div><strong>All accepted</strong><span>by evaluator pools</span></div>
+      <div><strong>No key</strong><span>needed for any source</span></div>
+    </div>
   </div>
+</section>
 
-  <h2>All my truth sources</h2>
-  <table>
-    <thead><tr><th>What it answers</th><th>Reference used</th><th>Intent</th><th>Try it</th></tr></thead>
-    <tbody>
-      <tr><td>CVE severity scores</td><td>NIST National Vulnerability Database, with CVE.org as fallback</td><td><code>CVE_LOOKUP_CVSS</code><br><code>VULNERABILITY_TRIAGE_GENERAL</code></td><td><a href="#cve-form">Above</a></td></tr>
-      <tr><td>Observed weather on a past day</td><td>Open-Meteo, the reference Telegraph names for this Intent</td><td><code>WEATHER_FORECAST_VERIFY_GENERAL</code></td><td><a href="#wx-form">Above</a></td></tr>
-      <tr><td>US airport disruption now</td><td>FAA National Airspace System status</td><td><code>TRAVEL_DISRUPTION_GENERAL</code></td><td><a href="#tr-form">Above</a></td></tr>
-      <tr><td>Company registry details</td><td>GLEIF, the global Legal Entity Identifier register</td><td><code>CORPORATE_REGISTRY_LOOKUP_GENERAL</code></td><td><a href="https://api.gleif.org/api/v1/lei-records/W38RGI023J3WT1HWRP32" target="_blank" rel="noopener">Siemens AG record</a></td></tr>
-      <tr><td>Exchange rates</td><td>European Central Bank reference rates</td><td><code>FX_NOW_EUR</code> <code>FX_NOW_CAD</code> <code>FX_NOW_SEK</code></td><td><a href="https://api.frankfurter.dev/v1/latest?from=EUR&amp;to=USD" target="_blank" rel="noopener">EUR to USD now</a></td></tr>
-      <tr><td>Macro indicators (GDP growth and similar)</td><td>IMF and World Bank</td><td><code>MACRO_ECONOMIC_INDICATOR</code></td><td><a href="https://api.worldbank.org/v2/country/NG/indicator/SL.UEM.TOTL.ZS?format=json&amp;mrv=3" target="_blank" rel="noopener">Nigeria unemployment</a></td></tr>
-      <tr><td>DeFi pool liquidity</td><td>DexScreener and GeckoTerminal, read at the same moment</td><td><code>LIQUIDITY_DEPTH_VERIFY_GENERAL</code></td><td><a href="seller-check.html">Seller check tool</a></td></tr>
-    </tbody>
-  </table>
+<section class="block" id="checkers">
+  <div class="wrap">
+    <h2>Try the live checkers.</h2>
+    <p class="muted">Each one runs the same server Telegraph's evaluator pool calls. Tap an example, or type your own.</p>
+    <div class="grid3">
+      <section class="card chk">
+        <h3>CVE severity score</h3>
+        <p>Official CVSS base score for a vulnerability. NIST's own score first; if NIST hasn't scored it yet, the reporting organisation's score from the official CVE record.</p>
+        <div class="chips-i"><span class="tag">CVE_LOOKUP_CVSS</span><span class="tag">VULNERABILITY_TRIAGE_GENERAL</span></div>
+        <form id="cve-form">
+          <input id="cve-id" value="CVE-2021-44228" aria-label="CVE ID" autocomplete="off">
+          <button class="go">Check</button>
+        </form>
+        <div class="ex"><button type="button" class="chip" data-for="cve" data-v="CVE-2021-44228">Log4Shell</button><button type="button" class="chip" data-for="cve" data-v="CVE-2024-3094">xz backdoor</button></div>
+        <div class="out" id="cve-out"><span class="muted">Try CVE-2021-44228 (Log4Shell) or CVE-2024-3094 (xz backdoor).</span></div>
+      </section>
 
-  <h2>How each answer can be checked</h2>
-  <p class="muted">Every answer from the live checkers says where it came from: which organisation scored the CVE and which CVSS version, or which place was matched, its coordinates and which data set was used. Unknown CVEs, unscored CVEs, unknown places and days that haven't finished return an error, so a miner is never marked wrong against a guessed reference.</p>
+      <section class="card chk">
+        <h3>What the weather actually was</h3>
+        <p>A past day's high, low, rainfall and main weather at a named place, the side an old forecast is checked against. Any day back to 1940, in the place's own time zone.</p>
+        <div class="chips-i"><span class="tag">WEATHER_FORECAST_VERIFY_GENERAL</span></div>
+        <form id="wx-form">
+          <input id="wx-place" value="Lagos" aria-label="Place" autocomplete="off">
+          <input id="wx-date" type="date" aria-label="Date">
+          <button class="go">Check</button>
+        </form>
+        <div class="ex"><button type="button" class="chip" data-for="wx" data-v="Lagos">Lagos</button><button type="button" class="chip" data-for="wx" data-v="Lagos, Portugal">Lagos, Portugal</button></div>
+        <div class="out" id="wx-out"><span class="muted">Try "Lagos" and "Lagos, Portugal": same name, different place.</span></div>
+      </section>
 
-  <footer>Endpoints: <code>https://telegraph-evaluator.vercel.app/api/truth/cve?cve_id=…</code>, <code>https://telegraph-evaluator.vercel.app/api/truth/weather?location=…&amp;date=YYYY-MM-DD</code> and <code>https://telegraph-evaluator.vercel.app/api/truth/travel?route_or_flight=…</code>. All are free and keyless.</footer>
+      <section class="card chk">
+        <h3>US airport disruption right now</h3>
+        <p>Ground stops, ground delay programs, arrival and departure delays and closures at US airports, live from the FAA. A route counts as disrupted if any airport on it is.</p>
+        <div class="chips-i"><span class="tag">TRAVEL_DISRUPTION_GENERAL</span></div>
+        <form id="tr-form">
+          <input id="tr-q" value="JFK-ATL" aria-label="Airport, route or flight" autocomplete="off">
+          <button class="go">Check</button>
+        </form>
+        <div class="ex"><button type="button" class="chip" data-for="tr" data-v="SFO">SFO</button><button type="button" class="chip" data-for="tr" data-v="JFK-ATL">JFK-ATL</button><button type="button" class="chip" data-for="tr" data-v="DL404 at ATL">DL404 at ATL</button></div>
+        <div class="out" id="tr-out"><span class="muted">Try an airport (SFO), a route (JFK-ATL) or a flight with its airport (DL404 at ATL).</span></div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="sources">
+  <div class="wrap">
+    <h2>All my truth sources.</h2>
+    <p class="muted">Seven sources, covering all 15 hackathon missions. Each is public, needs no key, and returns an error when it cannot answer.</p>
+    <div class="src">
+      <article class="s"><h3>CVE severity scores</h3><p class="ref">NIST National Vulnerability Database, with CVE.org as fallback.</p><div class="intents"><span class="tag">CVE_LOOKUP_CVSS</span><span class="tag">VULNERABILITY_TRIAGE_GENERAL</span></div><a class="try" href="#cve-form">Try it above <i>&darr;</i></a></article>
+      <article class="s"><h3>Observed weather on a past day</h3><p class="ref">Open-Meteo, the reference Telegraph names for this Intent.</p><div class="intents"><span class="tag">WEATHER_FORECAST_VERIFY_GENERAL</span></div><a class="try" href="#wx-form">Try it above <i>&darr;</i></a></article>
+      <article class="s"><h3>US airport disruption now</h3><p class="ref">FAA National Airspace System status.</p><div class="intents"><span class="tag">TRAVEL_DISRUPTION_GENERAL</span></div><a class="try" href="#tr-form">Try it above <i>&darr;</i></a></article>
+      <article class="s"><h3>Company registry details</h3><p class="ref">GLEIF, the global Legal Entity Identifier register.</p><div class="intents"><span class="tag">CORPORATE_REGISTRY_LOOKUP_GENERAL</span></div><a class="try" href="https://api.gleif.org/api/v1/lei-records/W38RGI023J3WT1HWRP32" target="_blank" rel="noopener">Siemens AG record <i>&#8599;</i></a></article>
+      <article class="s"><h3>Exchange rates</h3><p class="ref">European Central Bank reference rates.</p><div class="intents"><span class="tag">FX_NOW_EUR</span><span class="tag">FX_NOW_CAD</span><span class="tag">FX_NOW_SEK</span></div><a class="try" href="https://api.frankfurter.dev/v1/latest?from=EUR&amp;to=USD" target="_blank" rel="noopener">EUR to USD now <i>&#8599;</i></a></article>
+      <article class="s"><h3>Macro indicators (GDP growth and similar)</h3><p class="ref">IMF and World Bank.</p><div class="intents"><span class="tag">MACRO_ECONOMIC_INDICATOR</span></div><a class="try" href="https://api.worldbank.org/v2/country/NG/indicator/SL.UEM.TOTL.ZS?format=json&amp;mrv=3" target="_blank" rel="noopener">Nigeria unemployment <i>&#8599;</i></a></article>
+      <article class="s"><h3>DeFi pool liquidity</h3><p class="ref">DexScreener and GeckoTerminal, read at the same moment.</p><div class="intents"><span class="tag">LIQUIDITY_DEPTH_VERIFY_GENERAL</span></div><a class="try" href="seller-check.html">Seller check tool <i>&#8599;</i></a></article>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <details class="fold" id="fold-how">
+      <summary>How each answer can be checked</summary>
+      <div class="fold-body">
+        <p class="muted">Every answer from the live checkers says where it came from: which organisation scored the CVE and which CVSS version, or which place was matched, its coordinates and which data set was used. Unknown CVEs, unscored CVEs, unknown places and days that haven't finished return an error, so a miner is never marked wrong against a guessed reference.</p>
+        <p class="muted" style="margin-bottom:0">The three endpoints are free and keyless:</p>
+        <div class="ep"><code id="ep1">https://telegraph-evaluator.vercel.app/api/truth/cve?cve_id=…</code><button class="copy" type="button" data-c="ep1">Copy</button></div>
+        <div class="ep"><code id="ep2">https://telegraph-evaluator.vercel.app/api/truth/weather?location=…&amp;date=YYYY-MM-DD</code><button class="copy" type="button" data-c="ep2">Copy</button></div>
+        <div class="ep"><code id="ep3">https://telegraph-evaluator.vercel.app/api/truth/travel?route_or_flight=…</code><button class="copy" type="button" data-c="ep3">Copy</button></div>
+      </div>
+    </details>
+  </div>
+</section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-links">
+      <a href="https://github.com/investor567768/telegraph-evaluator">Code <span>&#8599;</span></a>
+      <a href="seller-check.html">Seller check tool <span>&#8599;</span></a>
+    </div>
+    <p>Built by Chrysolite for Telegraph Hackathon Season II, Evaluators track.</p>
+  </div>
+</footer>
+
 <script>
+  /* scroll reveal */
+  (function(){
+    const noAnim = matchMedia('(prefers-reduced-motion: reduce)').matches || new URLSearchParams(location.search).has('noanim') || !('IntersectionObserver' in window);
+    if (innerWidth >= 900) document.querySelectorAll('details.fold').forEach(d => d.open = true);
+    if (noAnim) return;
+    document.documentElement.classList.add('js');
+    const sel = '.block h2, .block > .wrap > p, .grid3 > .card, .src > .s, details.fold, .foot-links, footer p';
+    const els = [...document.querySelectorAll(sel)];
+    els.forEach(el => {
+      el.classList.add('rv');
+      const sibs = [...el.parentElement.children].filter(x => els.includes(x));
+      el.style.setProperty('--d', Math.min(sibs.indexOf(el) * 0.08, 0.4) + 's');
+    });
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+    els.forEach(el => io.observe(el));
+  })();
+
+  /* theme */
+  const root = document.documentElement;
+  function setTheme(t, save) {
+    root.setAttribute('data-theme', t);
+    document.getElementById('themeIcon').textContent = t === 'dark' ? '☀' : '☾';
+    document.getElementById('themeText').textContent = t === 'dark' ? 'Light' : 'Dark';
+    if (save) { try { localStorage.setItem('te-theme', t); } catch (e) {} }
+  }
+  let start = 'dark';
+  try { const s = localStorage.getItem('te-theme'); if (s === 'light' || s === 'dark') start = s; } catch (e) {}
+  const qp = new URLSearchParams(location.search).get('theme'); if (qp === 'light' || qp === 'dark') start = qp;
+  setTheme(start, false);
+  document.getElementById('theme').addEventListener('click', () => setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true));
+
+  /* copy endpoints */
+  document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', async () => {
+    const t = document.getElementById(b.dataset.c).textContent;
+    try { await navigator.clipboard.writeText(t); b.textContent = 'Copied'; } catch (e) { b.textContent = 'Select and copy'; }
+    setTimeout(() => b.textContent = 'Copy', 1600);
+  }));
+
+  /* live checkers (same servers and paths as before) */
   const API = 'https://telegraph-evaluator.vercel.app';
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   async function run(url, out, render, btn) {
@@ -116,7 +297,7 @@
       const r = await fetch(url);
       const j = await r.json();
       out.innerHTML = r.ok ? render(j) : `<span class="err">${esc(j.error || 'No answer')}</span>`;
-      out.innerHTML += `<pre>${esc(JSON.stringify(j, null, 2))}</pre>`;
+      out.innerHTML += `<details><summary>Raw answer</summary><pre>${esc(JSON.stringify(j, null, 2))}</pre></details>`;
     } catch (e) {
       out.innerHTML = '<span class="err">Could not reach the checker. Try again.</span>';
     }
@@ -130,10 +311,9 @@
     e.preventDefault();
     const id = document.getElementById('cve-id').value.trim();
     run(API + '/api/truth/cve?cve_id=' + encodeURIComponent(id), document.getElementById('cve-out'),
-      j => `<div class="big">${esc(j.cvss_score)} ${esc(j.severity || '')}</div><div class="muted">CVSS ${esc(j.cvss_version)} · scored by ${esc(j.score_source)} · <a href="${esc(j.source_url)}" target="_blank" rel="noopener">check at NIST</a></div>`,
+      j => `<div class="big">${esc(j.cvss_score)} ${esc(j.severity || '')}</div><div class="muted">CVSS ${esc(j.cvss_version)} · scored by ${esc(j.score_source)} · <a href="${esc(j.source_url)}" target="_blank" rel="noopener">check at NIST &#8599;</a></div>`,
       e.submitter || e.target.querySelector('button'));
   });
-
   document.getElementById('wx-form').addEventListener('submit', e => {
     e.preventDefault();
     const place = document.getElementById('wx-place').value.trim();
@@ -145,9 +325,16 @@
     e.preventDefault();
     const q = document.getElementById('tr-q').value.trim();
     run(API + '/api/truth/travel?route_or_flight=' + encodeURIComponent(q), document.getElementById('tr-out'),
-      j => `<div class="big">${j.disrupted ? 'Disrupted' : 'No disruption'}${j.delay_minutes ? ' · up to ' + esc(j.delay_minutes) + ' min' : ''}</div><div class="muted">${esc(j.status)} · FAA updated ${esc(j.faa_updated)}</div>`,
+      j => `<div class="big ${j.disrupted ? 'bad' : 'ok'}">${j.disrupted ? 'Disrupted' : 'No disruption'}${j.delay_minutes ? ' · up to ' + esc(j.delay_minutes) + ' min' : ''}</div><div class="muted">${esc(j.status)} · FAA updated ${esc(j.faa_updated)}</div>`,
       e.submitter || e.target.querySelector('button'));
   });
+
+  /* example chips fill the input and run it */
+  const target = { cve: 'cve-id', wx: 'wx-place', tr: 'tr-q' };
+  document.querySelectorAll('.ex .chip').forEach(c => c.addEventListener('click', () => {
+    document.getElementById(target[c.dataset.for]).value = c.dataset.v;
+    document.getElementById(c.dataset.for + '-form').requestSubmit();
+  }));
 </script>
 </body>
 </html>
