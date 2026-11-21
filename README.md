@@ -1,3 +1,19 @@
+# For judges (Evaluators track)
+
+Live site: **https://telegraph-evaluator.vercel.app** (try every source there). All sources are free, keyless and accepted ("Eligible") by Telegraph's evaluator pools.
+
+| What the rules prioritise | Our evidence |
+|---|---|
+| **Enabling the most distinct commercial missions** | Truth sources on 10 Intents that together appear in **all 15 of 15** missions: FX_NOW_EUR, FX_NOW_CAD, FX_NOW_SEK, MACRO_ECONOMIC_INDICATOR, LIQUIDITY_DEPTH_VERIFY_GENERAL, CORPORATE_REGISTRY_LOOKUP_GENERAL, WEATHER_FORECAST_VERIFY_GENERAL, VULNERABILITY_TRIAGE_GENERAL, CVE_LOOKUP_CVSS, TRAVEL_DISRUPTION_GENERAL |
+| **Meeting missing mission-critical Intent needs** | TRAVEL_DISRUPTION_GENERAL (mission 15) had 2 of the 3 contributors it needs to count; ours completed it on 21 Nov 2026 |
+| **Proven measurement improvement** | Caught a miner answering EUR/USD inverted (0.91 instead of 1.097) and the #1-ranked miner answering "rate 1.0" ([FX evidence](EVIDENCE-fx-ranking.md)). Each new checker fixes a known weakness of the plain source: CVE takes NIST's own score on purpose, not whichever is listed first; weather resolves place names ("Lagos" vs "Lagos, Portugal") and covers any day back to 1940; travel ignores closures that don't affect airline flights (for example "closed to transient general aviation") |
+| **Independently checked** | Tested by other builders: Fexx (OathCast) and Chrome (PREFLIGHT); one bug found and fixed the same day ([testers](TESTERS.md)) |
+| **Technical quality** | Every answer says where it came from; unknown or unfinished cases return an error, never a guess; tests in `test/` (`npm test`) |
+
+Public posts on X: [first post](https://x.com/kingChrys494/status/2122669988876104176), [3-minute demo video](https://x.com/kingChrys494/status/2123346766846206144) and the [21 Nov update with the live checkers](https://x.com/kingChrys494/status/2124070054975189012).
+
+---
+
 # Telegraph Evaluator: liquidity, macro, FX and company-registry truth sources
 
 **Track:** Evaluators · **Event:** Telegraph Hackathon Season II · **Network:** Telegraph testnet (nothing here is a mainnet or production claim)
