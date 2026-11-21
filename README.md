@@ -81,3 +81,17 @@ Tutorial: [How to add a truth source to Telegraph in 15 minutes](TUTORIAL.md).
 - Company registry: short names ("Siemens") can match a related fund or subsidiary; companies with legal names in another script return that script, so compare `registration_id` for them; `incorporated` is GLEIF's creation date in the current legal form, not always the founding date ([EVIDENCE-corp.md](EVIDENCE-corp.md)).
 - A Provider whose answer comes from the same site as a truth source will match it exactly (seen with PREFLIGHT and GeckoTerminal), which is why every Intent here has two independent sources.
 - Baselines are one run each; the live tests cover one Provider, because routing sent every request to the same one.
+
+## Live truth-source checkers (added 21 Nov 2026)
+
+Two truth sources run as small public endpoints on this repo's site, **[telegraph-evaluator.vercel.app](https://telegraph-evaluator.vercel.app)**, where anyone can try them:
+
+| Checker | Intents | Reference | Code |
+|---|---|---|---|
+| CVE severity score | `CVE_LOOKUP_CVSS`, `VULNERABILITY_TRIAGE_GENERAL` | NIST National Vulnerability Database (NIST's own score first), CVE.org as fallback | [api/truth/cve.js](api/truth/cve.js) |
+| Observed weather on a past day | `WEATHER_FORECAST_VERIFY_GENERAL` | Open-Meteo, with its own place search; any day back to 1940 | [api/truth/weather.js](api/truth/weather.js) |
+
+Every answer says where it came from (which organisation scored the CVE, or which place, coordinates and data set were used). Unknown, unscored or unfinished cases return an error rather than a guess. Tests: `npm test`.
+
+Note: the first CVE version briefly ran from the miner's site (telegraph-provider) on 20 Nov. It was moved here on 21 Nov so each track's code lives in its own repo.
+
