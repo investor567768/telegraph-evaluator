@@ -45,7 +45,7 @@
   <p class="muted">Built by Chrysolite for Telegraph Hackathon Season II, Evaluators track. Code: <a href="https://github.com/investor567768/telegraph-evaluator">github.com/investor567768/telegraph-evaluator</a></p>
 
   <div class="stats">
-    <div class="stat"><b>14 of 15</b><span class="muted">hackathon missions covered</span></div>
+    <div class="stat"><b>15 of 15</b><span class="muted">hackathon missions covered</span></div>
     <div class="stat"><b>All accepted</b><span class="muted">by Telegraph's evaluator pools</span></div>
     <div class="stat"><b>No API key</b><span class="muted">needed for any source</span></div>
   </div>
@@ -74,6 +74,17 @@
       </form>
       <div class="out" id="wx-out"><span class="muted">Try "Lagos" and "Lagos, Portugal": same name, different place.</span></div>
     </section>
+
+    <section class="card">
+      <h3>US airport disruption right now</h3>
+      <p class="muted">Ground stops, ground delay programs, arrival and departure delays and closures at US airports, live from the FAA. A route counts as disrupted if any airport on it is.</p>
+      <span class="tag">TRAVEL_DISRUPTION_GENERAL</span>
+      <form id="tr-form">
+        <input id="tr-q" value="JFK-ATL" aria-label="Airport, route or flight">
+        <button>Check</button>
+      </form>
+      <div class="out" id="tr-out"><span class="muted">Try an airport (SFO), a route (JFK-ATL) or a flight with its airport (DL404 at ATL).</span></div>
+    </section>
   </div>
 
   <h2>All my truth sources</h2>
@@ -82,6 +93,7 @@
     <tbody>
       <tr><td>CVE severity scores</td><td>NIST National Vulnerability Database, with CVE.org as fallback</td><td><code>CVE_LOOKUP_CVSS</code><br><code>VULNERABILITY_TRIAGE_GENERAL</code></td><td><a href="#cve-form">Above</a></td></tr>
       <tr><td>Observed weather on a past day</td><td>Open-Meteo, the reference Telegraph names for this Intent</td><td><code>WEATHER_FORECAST_VERIFY_GENERAL</code></td><td><a href="#wx-form">Above</a></td></tr>
+      <tr><td>US airport disruption now</td><td>FAA National Airspace System status</td><td><code>TRAVEL_DISRUPTION_GENERAL</code></td><td><a href="#tr-form">Above</a></td></tr>
       <tr><td>Company registry details</td><td>GLEIF, the global Legal Entity Identifier register</td><td><code>CORPORATE_REGISTRY_LOOKUP_GENERAL</code></td><td><a href="https://api.gleif.org/api/v1/lei-records/W38RGI023J3WT1HWRP32" target="_blank" rel="noopener">Siemens AG record</a></td></tr>
       <tr><td>Exchange rates</td><td>European Central Bank reference rates</td><td><code>FX_NOW_EUR</code> <code>FX_NOW_CAD</code> <code>FX_NOW_SEK</code></td><td><a href="https://api.frankfurter.dev/v1/latest?from=EUR&amp;to=USD" target="_blank" rel="noopener">EUR to USD now</a></td></tr>
       <tr><td>Macro indicators (GDP growth and similar)</td><td>IMF and World Bank</td><td><code>MACRO_ECONOMIC_INDICATOR</code></td><td><a href="https://api.worldbank.org/v2/country/NG/indicator/SL.UEM.TOTL.ZS?format=json&amp;mrv=3" target="_blank" rel="noopener">Nigeria unemployment</a></td></tr>
@@ -92,7 +104,7 @@
   <h2>How each answer can be checked</h2>
   <p class="muted">Every answer from the live checkers says where it came from: which organisation scored the CVE and which CVSS version, or which place was matched, its coordinates and which data set was used. Unknown CVEs, unscored CVEs, unknown places and days that haven't finished return an error, so a miner is never marked wrong against a guessed reference.</p>
 
-  <footer>Endpoints: <code>https://telegraph-evaluator.vercel.app/api/truth/cve?cve_id=…</code> and <code>https://telegraph-evaluator.vercel.app/api/truth/weather?location=…&amp;date=YYYY-MM-DD</code>. Both are free and keyless.</footer>
+  <footer>Endpoints: <code>https://telegraph-evaluator.vercel.app/api/truth/cve?cve_id=…</code>, <code>https://telegraph-evaluator.vercel.app/api/truth/weather?location=…&amp;date=YYYY-MM-DD</code> and <code>https://telegraph-evaluator.vercel.app/api/truth/travel?route_or_flight=…</code>. All are free and keyless.</footer>
 </main>
 <script>
   const API = 'https://telegraph-evaluator.vercel.app';
@@ -127,6 +139,13 @@
     const place = document.getElementById('wx-place').value.trim();
     run(API + '/api/truth/weather?location=' + encodeURIComponent(place) + '&date=' + encodeURIComponent(wxDate.value), document.getElementById('wx-out'),
       j => `<div class="big">${esc(j.temp_max_c)}° / ${esc(j.temp_min_c)}°C · ${esc(j.precipitation_mm)} mm · ${esc(j.condition)}</div><div class="muted">${esc(j.location)} (${esc(j.latitude)}, ${esc(j.longitude)}) · ${esc(j.date)} · ${esc(j.data_source)}</div>`,
+      e.submitter || e.target.querySelector('button'));
+  });
+  document.getElementById('tr-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const q = document.getElementById('tr-q').value.trim();
+    run(API + '/api/truth/travel?route_or_flight=' + encodeURIComponent(q), document.getElementById('tr-out'),
+      j => `<div class="big">${j.disrupted ? 'Disrupted' : 'No disruption'}${j.delay_minutes ? ' · up to ' + esc(j.delay_minutes) + ' min' : ''}</div><div class="muted">${esc(j.status)} · FAA updated ${esc(j.faa_updated)}</div>`,
       e.submitter || e.target.querySelector('button'));
   });
 </script>
