@@ -1,0 +1,9 @@
+{
+  "name": "telegraph-evaluator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Telegraph evaluator entry: truth sources (CVE severity scores, observed weather) and evidence",
+  "engines": { "node": ">=18" },
+  "scripts": { "test": "node --test test/*.test.js" }
+}
