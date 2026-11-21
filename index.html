@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telegraph Evaluator: truth sources by Chrysolite</title>
+<meta name="description" content="Public truth sources that Telegraph uses to score miners: CVE severity scores, observed weather, FX, macro indicators, company registries and DeFi liquidity.">
+<style>
+  :root { --bg:#0e1116; --card:#161b22; --line:#2a313c; --text:#e6edf3; --muted:#9aa4b2; --accent:#4cc38a; --warn:#e5a50a; --bad:#f05d5e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:40px 20px 64px; }
+  h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
+  h2 { font-size:20px; margin:40px 0 12px; }
+  p { margin:0 0 12px; }
+  .muted { color:var(--muted); }
+  a { color:var(--accent); }
+  .stats { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0 8px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; min-width:150px; }
+  .stat b { display:block; font-size:24px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:760px){ .grid { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .card h3 { margin:0 0 4px; font-size:17px; }
+  .tag { display:inline-block; font:12px/1 ui-monospace,Consolas,monospace; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:4px 6px; margin:2px 4px 2px 0; }
+  form { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 10px; }
+  input { flex:1; min-width:120px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 10px; font:inherit; }
+  button { background:var(--accent); color:#06120c; border:0; border-radius:8px; padding:9px 14px; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .out { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px; min-height:64px; font-size:14px; }
+  .out .big { font-size:22px; font-weight:700; }
+  .out .err { color:var(--bad); }
+  .out pre { margin:8px 0 0; white-space:pre-wrap; word-break:break-word; font:12px/1.45 ui-monospace,Consolas,monospace; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:13px; }
+  code { font:13px ui-monospace,Consolas,monospace; }
+  footer { margin-top:48px; color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Telegraph Evaluator: truth sources</h1>
+  <p class="muted">Telegraph scores its miners by comparing their answers with a trusted reference. These are the references I contribute: public, keyless sources that give one checkable answer, and that return an error rather than a guess when they cannot.</p>
+  <p class="muted">Built by Chrysolite for Telegraph Hackathon Season II, Evaluators track. Code: <a href="https://github.com/investor567768/telegraph-evaluator">github.com/investor567768/telegraph-evaluator</a></p>
+
+  <div class="stats">
+    <div class="stat"><b>14 of 15</b><span class="muted">hackathon missions covered</span></div>
+    <div class="stat"><b>All accepted</b><span class="muted">by Telegraph's evaluator pools</span></div>
+    <div class="stat"><b>No API key</b><span class="muted">needed for any source</span></div>
+  </div>
+
+  <h2>Try the live checkers</h2>
+  <div class="grid">
+    <section class="card">
+      <h3>CVE severity score</h3>
+      <p class="muted">Official CVSS base score for a vulnerability. NIST's own score first; if NIST hasn't scored it yet, the reporting organisation's score from the official CVE record.</p>
+      <span class="tag">CVE_LOOKUP_CVSS</span><span class="tag">VULNERABILITY_TRIAGE_GENERAL</span>
+      <form id="cve-form">
+        <input id="cve-id" value="CVE-2021-44228" aria-label="CVE ID">
+        <button>Check</button>
+      </form>
+      <div class="out" id="cve-out"><span class="muted">Try CVE-2021-44228 (Log4Shell) or CVE-2024-3094 (xz backdoor).</span></div>
+    </section>
+
+    <section class="card">
+      <h3>What the weather actually was</h3>
+      <p class="muted">A past day's high, low, rainfall and main weather at a named place, the side an old forecast is checked against. Any day back to 1940, in the place's own time zone.</p>
+      <span class="tag">WEATHER_FORECAST_VERIFY_GENERAL</span>
+      <form id="wx-form">
+        <input id="wx-place" value="Lagos" aria-label="Place">
+        <input id="wx-date" type="date" aria-label="Date">
+        <button>Check</button>
+      </form>
+      <div class="out" id="wx-out"><span class="muted">Try "Lagos" and "Lagos, Portugal": same name, different place.</span></div>
+    </section>
+  </div>
+
+  <h2>All my truth sources</h2>
+  <table>
+    <thead><tr><th>What it answers</th><th>Reference used</th><th>Intent</th></tr></thead>
+    <tbody>
+      <tr><td>CVE severity scores</td><td>NIST National Vulnerability Database, with CVE.org as fallback</td><td><code>CVE_LOOKUP_CVSS</code><br><code>VULNERABILITY_TRIAGE_GENERAL</code></td></tr>
+      <tr><td>Observed weather on a past day</td><td>Open-Meteo, the reference Telegraph names for this Intent</td><td><code>WEATHER_FORECAST_VERIFY_GENERAL</code></td></tr>
+      <tr><td>Company registry details</td><td>GLEIF, the global Legal Entity Identifier register</td><td><code>CORPORATE_REGISTRY_LOOKUP_GENERAL</code></td></tr>
+      <tr><td>Exchange rates</td><td>European Central Bank reference rates</td><td><code>FX_NOW_EUR</code> <code>FX_NOW_CAD</code> <code>FX_NOW_SEK</code></td></tr>
+      <tr><td>Macro indicators (GDP growth and similar)</td><td>IMF and World Bank</td><td><code>MACRO_ECONOMIC_INDICATOR</code></td></tr>
+      <tr><td>DeFi pool liquidity</td><td>Public DEX data</td><td><code>LIQUIDITY_DEPTH_VERIFY_GENERAL</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>How each answer can be checked</h2>
+  <p class="muted">Every answer from the live checkers says where it came from: which organisation scored the CVE and which CVSS version, or which place was matched, its coordinates and which data set was used. Unknown CVEs, unscored CVEs, unknown places and days that haven't finished return an error, so a miner is never marked wrong against a guessed reference.</p>
+
+  <footer>Endpoints: <code>https://telegraph-evaluator.vercel.app/api/truth/cve?cve_id=…</code> and <code>https://telegraph-evaluator.vercel.app/api/truth/weather?location=…&amp;date=YYYY-MM-DD</code>. Both are free and keyless.</footer>
+</main>
+<script>
+  const API = 'https://telegraph-evaluator.vercel.app';
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  async function run(url, out, render, btn) {
+    btn.disabled = true;
+    out.innerHTML = '<span class="muted">Checking…</span>';
+    try {
+      const r = await fetch(url);
+      const j = await r.json();
+      out.innerHTML = r.ok ? render(j) : `<span class="err">${esc(j.error || 'No answer')}</span>`;
+      out.innerHTML += `<pre>${esc(JSON.stringify(j, null, 2))}</pre>`;
+    } catch (e) {
+      out.innerHTML = '<span class="err">Could not reach the checker. Try again.</span>';
+    }
+    btn.disabled = false;
+  }
+  const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  const wxDate = document.getElementById('wx-date');
+  wxDate.value = y; wxDate.max = y;
+
+  document.getElementById('cve-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = document.getElementById('cve-id').value.trim();
+    run(API + '/api/truth/cve?cve_id=' + encodeURIComponent(id), document.getElementById('cve-out'),
+      j => `<div class="big">${esc(j.cvss_score)} ${esc(j.severity || '')}</div><div class="muted">CVSS ${esc(j.cvss_version)} · scored by ${esc(j.score_source)} · <a href="${esc(j.source_url)}" target="_blank" rel="noopener">check at NIST</a></div>`,
+      e.submitter || e.target.querySelector('button'));
+  });
+
+  document.getElementById('wx-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const place = document.getElementById('wx-place').value.trim();
+    run(API + '/api/truth/weather?location=' + encodeURIComponent(place) + '&date=' + encodeURIComponent(wxDate.value), document.getElementById('wx-out'),
+      j => `<div class="big">${esc(j.temp_max_c)}° / ${esc(j.temp_min_c)}°C · ${esc(j.precipitation_mm)} mm · ${esc(j.condition)}</div><div class="muted">${esc(j.location)} (${esc(j.latitude)}, ${esc(j.longitude)}) · ${esc(j.date)} · ${esc(j.data_source)}</div>`,
+      e.submitter || e.target.querySelector('button'));
+  });
+</script>
+</body>
+</html>
