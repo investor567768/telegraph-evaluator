@@ -78,14 +78,14 @@
 
   <h2>All my truth sources</h2>
   <table>
-    <thead><tr><th>What it answers</th><th>Reference used</th><th>Intent</th></tr></thead>
+    <thead><tr><th>What it answers</th><th>Reference used</th><th>Intent</th><th>Try it</th></tr></thead>
     <tbody>
-      <tr><td>CVE severity scores</td><td>NIST National Vulnerability Database, with CVE.org as fallback</td><td><code>CVE_LOOKUP_CVSS</code><br><code>VULNERABILITY_TRIAGE_GENERAL</code></td></tr>
-      <tr><td>Observed weather on a past day</td><td>Open-Meteo, the reference Telegraph names for this Intent</td><td><code>WEATHER_FORECAST_VERIFY_GENERAL</code></td></tr>
-      <tr><td>Company registry details</td><td>GLEIF, the global Legal Entity Identifier register</td><td><code>CORPORATE_REGISTRY_LOOKUP_GENERAL</code></td></tr>
-      <tr><td>Exchange rates</td><td>European Central Bank reference rates</td><td><code>FX_NOW_EUR</code> <code>FX_NOW_CAD</code> <code>FX_NOW_SEK</code></td></tr>
-      <tr><td>Macro indicators (GDP growth and similar)</td><td>IMF and World Bank</td><td><code>MACRO_ECONOMIC_INDICATOR</code></td></tr>
-      <tr><td>DeFi pool liquidity</td><td>Public DEX data</td><td><code>LIQUIDITY_DEPTH_VERIFY_GENERAL</code></td></tr>
+      <tr><td>CVE severity scores</td><td>NIST National Vulnerability Database, with CVE.org as fallback</td><td><code>CVE_LOOKUP_CVSS</code><br><code>VULNERABILITY_TRIAGE_GENERAL</code></td><td><a href="#cve-form">Above</a></td></tr>
+      <tr><td>Observed weather on a past day</td><td>Open-Meteo, the reference Telegraph names for this Intent</td><td><code>WEATHER_FORECAST_VERIFY_GENERAL</code></td><td><a href="#wx-form">Above</a></td></tr>
+      <tr><td>Company registry details</td><td>GLEIF, the global Legal Entity Identifier register</td><td><code>CORPORATE_REGISTRY_LOOKUP_GENERAL</code></td><td><a href="https://api.gleif.org/api/v1/lei-records/W38RGI023J3WT1HWRP32" target="_blank" rel="noopener">Siemens AG record</a></td></tr>
+      <tr><td>Exchange rates</td><td>European Central Bank reference rates</td><td><code>FX_NOW_EUR</code> <code>FX_NOW_CAD</code> <code>FX_NOW_SEK</code></td><td><a href="https://api.frankfurter.dev/v1/latest?from=EUR&amp;to=USD" target="_blank" rel="noopener">EUR to USD now</a></td></tr>
+      <tr><td>Macro indicators (GDP growth and similar)</td><td>IMF and World Bank</td><td><code>MACRO_ECONOMIC_INDICATOR</code></td><td><a href="https://api.worldbank.org/v2/country/NG/indicator/SL.UEM.TOTL.ZS?format=json&amp;mrv=3" target="_blank" rel="noopener">Nigeria unemployment</a></td></tr>
+      <tr><td>DeFi pool liquidity</td><td>DexScreener and GeckoTerminal, read at the same moment</td><td><code>LIQUIDITY_DEPTH_VERIFY_GENERAL</code></td><td><a href="seller-check.html">Seller check tool</a></td></tr>
     </tbody>
   </table>
 
