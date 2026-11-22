@@ -14,7 +14,7 @@ Public posts on X: [first post](https://x.com/kingChrys494/status/21226699888761
 
 ---
 
-# Telegraph Evaluator: liquidity, macro, FX and company-registry truth sources
+# Telegraph Evaluator: liquidity, macro, FX, company-registry, CVE, weather and airport truth sources
 
 **Track:** Evaluators · **Event:** Telegraph Hackathon Season II · **Network:** Telegraph testnet (nothing here is a mainnet or production claim)
 
@@ -23,7 +23,7 @@ Public posts on X: [first post](https://x.com/kingChrys494/status/21226699888761
 Free, no-key public truth sources that give Telegraph a trusted reference answer for mission-critical Intents, so the network can tell a Provider that answers correctly from one that does not. Each source comes with an independent baseline check and tested failure cases.
 
 ## Results at a glance
-- **9 truth sources** on Telegraph covering **10 of the 15 H2 missions**, all **Eligible**. Screenshots: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png), [FX](anjoman-fx.png), [company registry](anjoman-corp.png).
+- **9 truth sources** (6 Intents) uploaded first, covering **10 of the 15 H2 missions**, all **Eligible**. The three live checkers added on 20 to 21 Nov (below) add 4 more Intents and bring the total to **10 Intents covering all 15 of 15 missions**. Screenshots: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png), [FX](anjoman-fx.png), [company registry](anjoman-corp.png).
 - **Accuracy against an independent second source:** 20 pools on 5 chains, all within 2% ([EVIDENCE.md](EVIDENCE.md)); inflation, unemployment and GDP growth for 102 to 189 countries, median gap 0.04 to 0.13 points ([EVIDENCE-macro.md](EVIDENCE-macro.md)); 29 currencies, median gap 0.15% ([EVIDENCE-fx.md](EVIDENCE-fx.md)).
 - **Company registry, measured and improved (18 Nov):** the first name search found the right company for 15 of 20 full legal names and 1 wrong one. A tested change to GLEIF's all-names search raised that to **18 of 20 with no wrong company**, and fixed Japanese and Korean names ([EVIDENCE-corp.md](EVIDENCE-corp.md)).
 - **Live tests through Telegraph:** liquidity on 5 chains, every delivered answer within 1% and 1 missing answer caught (traced to routing); FX, a correct 1.10 answer replaced by Telegraph with 1.00; company registry, "Siemens" resolved to the right company.
@@ -100,12 +100,13 @@ Tutorial: [How to add a truth source to Telegraph in 15 minutes](TUTORIAL.md).
 
 ## Live truth-source checkers (added 21 Nov 2026)
 
-Two truth sources run as small public endpoints on this repo's site, **[telegraph-evaluator.vercel.app](https://telegraph-evaluator.vercel.app)**, where anyone can try them:
+Three truth sources run as small public endpoints on this repo's site, **[telegraph-evaluator.vercel.app](https://telegraph-evaluator.vercel.app)**, where anyone can try them:
 
 | Checker | Intents | Reference | Code |
 |---|---|---|---|
 | CVE severity score | `CVE_LOOKUP_CVSS`, `VULNERABILITY_TRIAGE_GENERAL` | NIST National Vulnerability Database (NIST's own score first), CVE.org as fallback | [api/truth/cve.js](api/truth/cve.js) |
 | Observed weather on a past day | `WEATHER_FORECAST_VERIFY_GENERAL` | Open-Meteo, with its own place search; any day back to 1940 | [api/truth/weather.js](api/truth/weather.js) |
+| Disruption at a US airport right now | `TRAVEL_DISRUPTION_GENERAL` | FAA National Airspace System status feed (nasstatus.faa.gov). Scope: US airports, airport-level disruption, not individual flight numbers | [api/truth/travel.js](api/truth/travel.js) |
 
 Every answer says where it came from (which organisation scored the CVE, or which place, coordinates and data set were used). Unknown, unscored or unfinished cases return an error rather than a guess. Tests: `npm test`.
 
