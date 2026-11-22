@@ -71,3 +71,17 @@ test('quiet airport is not disrupted; no airport code is an error', async () => 
   assert.equal(a.delay_minutes, 0);
   await assert.rejects(answer({ route_or_flight: 'DL404' }, NOW), e => e.status === 400);
 });
+
+test('codes the FAA feed cannot speak for are refused, not reported as "no disruption"', async () => {
+  mock();
+  await assert.rejects(answer({ route_or_flight: 'LOS' }, NOW), e => e.status === 400 && /not a US airport/.test(e.message));
+  await assert.rejects(answer({ route_or_flight: 'ZZZ' }, NOW), e => e.status === 400);
+});
+
+test('a route with one unknown code answers for the known airport and says what it ignored', async () => {
+  mock();
+  const a = await answer({ route_or_flight: 'ATL-LOS' }, NOW);
+  assert.deepEqual(a.airports_checked, ['ATL']);
+  assert.deepEqual(a.ignored_codes, ['LOS']);
+  assert.equal(a.disrupted, true);
+});

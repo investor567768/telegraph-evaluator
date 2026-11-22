@@ -7,6 +7,7 @@
 // It lists ground stops, ground delay programs, general arrival/departure delays and airport closures.
 // Scope, stated in every answer: US airports, airport-level disruption (not individual flight numbers).
 
+import { US_AIRPORTS } from './us-airports.js';
 const FAA = 'https://nasstatus.faa.gov/api/airport-status-information';
 const UA = { 'user-agent': 'telegraph-evaluator/1.0 (+https://github.com/investor567768/telegraph-evaluator)' };
 const TTL = 2 * 60 * 1000;
@@ -91,8 +92,13 @@ function airportsIn(raw) {
 async function answer(params, now = new Date()) {
   const raw = String(params.route_or_flight || params.airport || params.route || '').trim();
   if (!raw) throw new AnswerError(400, 'route_or_flight is required and must name a US airport, for example "ATL", "JFK-LAX" or "DL404 at ATL".');
-  const codes = airportsIn(raw);
-  if (!codes.length) throw new AnswerError(400, `No airport code found in "${raw}". This source reports FAA airport-level disruption, so name the airport, for example "DL404 at ATL".`);
+  const requested = airportsIn(raw);
+  if (!requested.length) throw new AnswerError(400, `No airport code found in "${raw}". This source reports FAA airport-level disruption, so name the airport, for example "DL404 at ATL".`);
+  // Only airports the FAA feed can speak for. The feed lists airports that HAVE a problem, so for an
+  // unknown or non-US code, "nothing listed" would wrongly read as "no disruption".
+  const codes = requested.filter(c => US_AIRPORTS.has(c));
+  const ignored = requested.filter(c => !US_AIRPORTS.has(c));
+  if (!codes.length) throw new AnswerError(400, `${ignored.join(', ')} is not a US airport this source covers. It reports FAA airport-level disruption at US airports only (including territories), so it cannot say anything about it.`);
 
   const { updated, events } = await feed();
   const hits = events.filter(e => codes.includes(e.arpt) && (e.kind !== 'closure' || closureActive(e.reason, now)));
@@ -103,6 +109,7 @@ async function answer(params, now = new Date()) {
   return {
     route_or_flight: raw,
     airports_checked: codes,
+    ...(ignored.length ? { ignored_codes: ignored } : {}),
     disrupted: hits.length > 0,
     status: hits.length ? hits.map(h => `${h.arpt}: ${h.kind}${h.until ? ` until ${h.until}` : ''}`).join('; ') : `no FAA-reported disruption at ${codes.join(', ')}`,
     delay_minutes: delays.length ? Math.max(...delays) : (hits.length ? null : 0),
