@@ -1,0 +1,42 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-b2b-identity-dns-wikidata-gleif-evaluator
+name: B2B identity enrichment from a domain (DNS, Wikidata, GLEIF)
+description: Public, no-key https endpoint that returns who is behind a company domain. It first checks that the domain exists in DNS (reserved documentation domains such as .example are never a business). It then finds the company whose official website on Wikidata is that domain and returns headquarters, employee count with its date, industry and current CEO, and takes the legal name, registration number, registration authority, jurisdiction and addresses from GLEIF using the company's LEI. Every field names its source in the sources object. Anything not found in a public source is listed in not_verifiable and is never guessed. Tax ID is always not_verifiable. If employee figures disagree for the same year the answer is a range. Only companies on Wikidata with this website are found. Source code and tests are at github.com/investor567768/telegraph-evaluator (api/truth/b2b.js).
+base_url: https://telegraph-evaluator.vercel.app
+auth:
+  type: none
+endpoints:
+- path: /b2b-identity
+  external_path: /api/truth/b2b
+  method: GET
+  description: One company domain in, its identity out. Fields domain_valid, company_found, legal_entity_name, registration_number, registration_authority, jurisdiction, lei, registered_address, headquarters, employee_count, employee_count_range, employee_count_as_of, industry, ceo, tax_id (always null), not_verifiable, sources.
+  intents:
+  - B2B_IDENTITY_ENRICHMENT_GENERAL
+  params:
+    query:
+      required:
+      - name: domain
+        type: string
+        intents: ['*']
+        description: The company website domain, for example siemens.com. A full URL or a work email address also works.
+intent_mapping:
+  B2B_IDENTITY_ENRICHMENT_GENERAL:
+    endpoint: /b2b-identity
+    input:
+      domain:
+        from: domain
+        how: "The company website domain, for example siemens.com. If the query gives a URL or a work email, use its domain."
+    output:
+      domain_valid: { path: domain_valid }
+      legal_entity_name: { path: legal_entity_name }
+      registration_number: { path: registration_number }
+      headquarters: { path: headquarters }
+      employee_count: { path: employee_count }
+      industry: { path: industry }
+      ceo: { path: ceo }
+      tax_id: { path: tax_id }
+semantics:
+  supported_intents:
+  - B2B_IDENTITY_ENRICHMENT_GENERAL

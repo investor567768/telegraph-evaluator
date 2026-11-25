@@ -1,341 +1,703 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Telegraph Evaluator: truth sources by Chrysolite</title>
-<meta name="description" content="Public truth sources that Telegraph uses to score miners: CVE severity scores, observed weather, airport disruption, FX, macro indicators, company registries and DeFi liquidity.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Onchain Assistant</title>
 <style>
-  :root, [data-theme="dark"] {
-    --bg:#0e1116; --bg-glow:rgba(76,195,138,.17);
-    --surface:#161b22; --surface-2:#1d242d; --line:#2a313c; --line-2:#3a4350;
-    --text:#e6edf3; --muted:#9aa4b2; --accent:#4cc38a; --accent-ink:#06120c;
-    --ok:#4cc38a; --ok-bg:rgba(76,195,138,.15); --bad:#f05d5e; --bad-bg:rgba(240,93,94,.15); --warn:#e5a50a;
-    --shadow:0 20px 50px -26px rgba(0,0,0,.8);
-  }
-  [data-theme="light"] {
-    --bg:#f4f8f6; --bg-glow:rgba(18,135,90,.13);
-    --surface:#ffffff; --surface-2:#eef4f1; --line:#dde6e1; --line-2:#c7d3cd;
-    --text:#0f1a15; --muted:#52615a; --accent:#12875a; --accent-ink:#fff;
-    --ok:#12875a; --ok-bg:rgba(18,135,90,.11); --bad:#d33b3b; --bad-bg:rgba(211,59,59,.10); --warn:#a96b00;
-    --shadow:0 20px 50px -30px rgba(20,60,40,.35);
-  }
-  * { box-sizing:border-box; }
-  html { scroll-behavior:smooth; scroll-padding-top:76px; }
-  body { margin:0; background:var(--bg); color:var(--text); font:400 16.5px/1.6 'Geist',system-ui,-apple-system,'Segoe UI',sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; transition:background .25s,color .25s; }
-  a { color:var(--accent); }
-  :focus-visible { outline:3px solid var(--accent); outline-offset:3px; border-radius:8px; }
-  .wrap { max-width:1060px; margin:0 auto; padding:0 20px; }
-  h1,h2,h3 { margin:0; letter-spacing:-.025em; line-height:1.1; }
-  h2 { font-size:clamp(1.7rem,4.6vw,2.4rem); font-weight:700; margin-bottom:10px; }
-  h3 { font-size:1.08rem; font-weight:600; letter-spacing:-.01em; }
-  p { margin:0 0 12px; max-width:64ch; }
-  .muted { color:var(--muted); }
-  code, .mono { font-family:'Geist Mono',ui-monospace,Consolas,monospace; }
-
-  /* app bar */
-  .appbar { position:sticky; top:0; z-index:20; backdrop-filter:blur(14px); background:color-mix(in srgb,var(--bg) 82%,transparent); border-bottom:1px solid var(--line); }
-  .appbar .in { display:flex; align-items:center; justify-content:space-between; gap:12px; height:60px; }
-  .brand { display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:-.02em; color:var(--text); text-decoration:none; }
-  .logo { width:28px; height:28px; border-radius:8px; background:var(--accent); display:grid; place-items:center; color:var(--accent-ink); font-weight:800; font-size:.95rem; }
-  .nav { display:flex; align-items:center; gap:4px; }
-  .nav a { color:var(--muted); text-decoration:none; padding:8px 12px; border-radius:10px; font-size:.94rem; font-weight:500; }
-  .nav a:hover { color:var(--text); background:var(--surface); }
-  .theme { appearance:none; border:1px solid var(--line-2); background:var(--surface); color:var(--text); border-radius:10px; padding:8px 12px; font:500 .9rem 'Geist',sans-serif; cursor:pointer; display:flex; gap:8px; align-items:center; }
-  .theme:hover { border-color:var(--accent); }
-  @media (max-width:640px){ .nav a.opt { display:none; } }
-
-  /* hero */
-  .hero { position:relative; padding:40px 0 36px; }
-  .hero::before { content:""; position:absolute; inset:-60px 0 auto 0; height:480px; background:radial-gradient(600px 300px at 80% 20%, var(--bg-glow), transparent 70%); pointer-events:none; }
-  .hero > * { position:relative; }
-  .pill-top { display:inline-flex; gap:8px; align-items:center; border:1px solid var(--line-2); background:var(--surface); padding:6px 12px; border-radius:999px; font-size:.85rem; color:var(--muted); margin-bottom:18px; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); }
-  h1 { font-size:clamp(2rem,5.6vw,3.4rem); font-weight:800; letter-spacing:-.035em; max-width:18ch; }
-  .lede { font-size:1.05rem; color:var(--muted); margin:16px 0 22px; }
-  .btns { display:flex; flex-wrap:wrap; gap:10px; }
-  .btn { display:inline-block; padding:12px 18px; border-radius:12px; font:600 .98rem 'Geist',sans-serif; text-decoration:none; border:1px solid var(--line-2); color:var(--text); background:var(--surface); }
-  .btn:hover { border-color:var(--accent); }
-  .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); box-shadow:0 10px 28px -12px var(--accent); }
-  .btn.primary:hover { filter:brightness(1.08); }
-  .strip { display:grid; grid-template-columns:repeat(3,1fr); margin-top:28px; background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
-  .strip div { padding:14px 14px; border-right:1px solid var(--line); }
-  .strip div:last-child { border-right:0; }
-  .strip strong { display:block; font-size:clamp(1.05rem,4.4vw,1.5rem); font-weight:700; letter-spacing:-.02em; }
-  .strip span { color:var(--muted); font-size:.82rem; line-height:1.35; display:block; }
-
-  section.block { padding:56px 0; border-top:1px solid var(--line); }
-  .card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; box-shadow:var(--shadow); }
-  .grid3 { display:grid; gap:16px; grid-template-columns:1fr; margin-top:22px; }
-  @media (min-width:900px){ .grid3 { grid-template-columns:repeat(3,1fr); } }
-
-  /* checkers */
-  .chk h3 { margin-bottom:6px; }
-  .chk > p { font-size:.95rem; color:var(--muted); }
-  .chips-i { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 14px; }
-  .tag { font:500 .72rem 'Geist Mono',monospace; color:var(--muted); border:1px solid var(--line-2); border-radius:6px; padding:4px 7px; }
-  form { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
-  input { flex:1 1 140px; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line-2); border-radius:12px; padding:12px 13px; font:400 1rem 'Geist',sans-serif; }
-  input::placeholder { color:var(--muted); }
-  .go { background:var(--accent); color:var(--accent-ink); border:0; border-radius:12px; padding:12px 18px; font:600 1rem 'Geist',sans-serif; cursor:pointer; flex:1 1 100%; }
-  @media (min-width:900px){ .go { flex:none; } }
-  .go:hover { filter:brightness(1.08); }
-  .go:disabled { opacity:.6; cursor:wait; }
-  .ex { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-  .chip { background:transparent; border:1px solid var(--line-2); color:var(--muted); border-radius:999px; padding:5px 11px; font:500 .84rem 'Geist',sans-serif; cursor:pointer; }
-  .chip:hover { color:var(--text); border-color:var(--accent); }
-  .out { background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:14px; min-height:84px; font-size:.93rem; overflow-wrap:anywhere; }
-  .out .big { font-size:1.35rem; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
-  .out .big.ok { color:var(--ok); } .out .big.bad { color:var(--bad); }
-  .out .err { color:var(--bad); }
-  .out details { margin-top:10px; }
-  .out summary { cursor:pointer; color:var(--muted); font-size:.85rem; }
-  .out pre { margin:8px 0 0; white-space:pre-wrap; word-break:break-word; font:400 .76rem/1.5 'Geist Mono',monospace; color:var(--muted); }
-
-  /* source cards */
-  .src { display:grid; gap:14px; grid-template-columns:1fr; margin-top:22px; }
-  @media (min-width:760px){ .src { grid-template-columns:1fr 1fr; } }
-  .s { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:8px; }
-  .s h3 { font-size:1.05rem; }
-  .s .ref { color:var(--muted); font-size:.93rem; margin:0; }
-  .s .intents { display:flex; flex-wrap:wrap; gap:6px; }
-  .s .try { margin-top:auto; align-self:flex-start; display:inline-flex; gap:6px; align-items:center; padding:9px 14px; border:1px solid var(--line-2); border-radius:10px; color:var(--text); text-decoration:none; font-weight:600; font-size:.92rem; background:var(--surface-2); }
-  .s .try:hover { border-color:var(--accent); }
-  .s .try i { font-style:normal; color:var(--accent); }
-
-  /* fold */
-  details.fold { background:var(--surface); border:1px solid var(--line); border-radius:18px; }
-  details.fold > summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:14px; padding:20px 22px; font-size:clamp(1.2rem,3.6vw,1.6rem); font-weight:700; letter-spacing:-.02em; }
-  details.fold > summary::-webkit-details-marker { display:none; }
-  details.fold > summary::after { content:""; flex:none; width:11px; height:11px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(45deg); transition:transform .25s; margin-right:4px; }
-  details.fold[open] > summary::after { transform:rotate(-135deg); }
-  .fold-body { padding:0 22px 22px; }
-  .ep { display:flex; gap:8px; align-items:stretch; margin-top:10px; }
-  .ep code { flex:1; min-width:0; overflow-x:auto; white-space:nowrap; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.8rem; }
-  .copy { flex:none; background:var(--surface-2); color:var(--text); border:1px solid var(--line-2); border-radius:10px; padding:0 14px; font:600 .88rem 'Geist',sans-serif; cursor:pointer; }
-  .copy:hover { border-color:var(--accent); }
-
-  footer { padding:36px 0 60px; border-top:1px solid var(--line); color:var(--muted); font-size:.92rem; }
-  .foot-links { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
-  .foot-links a { display:inline-flex; gap:8px; align-items:center; padding:10px 14px; border:1px solid var(--line-2); border-radius:12px; color:var(--text); text-decoration:none; font-weight:600; font-size:.95rem; background:var(--surface); }
-  .foot-links a:hover { border-color:var(--accent); }
-  .foot-links a span { color:var(--accent); }
-
-  /* scroll reveal */
-  .js .rv { opacity:0; transform:translateY(20px); transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); transition-delay:var(--d,0s); }
-  .js .rv.in { opacity:1; transform:none; }
-  @media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } .js .rv { opacity:1; transform:none; transition:none; } }
+  :root{--bg:#f5f7f6;--card:#fff;--ink:#17211e;--mute:#62706b;--line:#dfe6e3;--accent:#2f7d6b;--accentsoft:#e5f1ed;--onaccent:#fff;--ok:#1a7f4b;--warn:#a85f00;--unk:#62706b;--bad:#b3261e;--note:#3a6fb0}
+  @media (prefers-color-scheme:dark){:root{--bg:#101614;--card:#18211e;--ink:#eaf1ee;--line:#27332f;--accent:#4aa58f;--accentsoft:#1c2e29;--onaccent:#07120f;--ok:#4cc38a;--warn:#e0a040;--unk:#9baba5;--bad:#f2b8b5;--note:#8bb6ea}}
+  @media (prefers-color-scheme:dark){:root{--mute:#9baba5}}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent)}
+  header.top{background:var(--card);border-bottom:1px solid var(--line)}
+  .bar{max-width:820px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:10px;background:var(--accentsoft);color:var(--accent);display:grid;place-items:center;font-weight:800}
+  .brand{font-weight:700;font-size:18px} .pill{font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--accentsoft);color:var(--mute);padding:3px 8px;border-radius:99px}
+  nav.tabs{max-width:820px;margin:0 auto;padding:0 16px 12px;display:flex;justify-content:center}
+  .seg{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:4px;flex-wrap:wrap;justify-content:center}
+  .seg button{background:transparent;color:var(--mute);border:0;padding:8px 10px;border-radius:99px;font:inherit;font-size:14px;cursor:pointer}
+  .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+  main{max-width:820px;margin:0 auto;padding:24px 16px 64px}
+  .hero{text-align:center;padding:12px 0 8px} .hero .ic{width:64px;height:64px;border-radius:20px;background:var(--accentsoft);color:var(--accent);display:grid;place-items:center;margin:0 auto 14px;font-size:28px;font-weight:800}
+  h1{font-size:clamp(26px,6vw,36px);line-height:1.15;margin:0 0 8px;letter-spacing:-.01em} .hero p{color:var(--mute);margin:0 auto 18px;max-width:560px}
+  .askcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .askcard label.q{display:block;font-weight:600;margin-bottom:8px}
+  textarea,input[type=text],select{width:100%;max-width:100%;min-width:0;padding:12px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:inherit}
+  textarea{resize:vertical;min-height:64px} textarea:focus,input:focus,select:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+  button{padding:11px 18px;border:0;border-radius:99px;background:var(--accent);color:var(--onaccent);font:inherit;cursor:pointer;font-weight:600}
+  button.small{padding:6px 12px;font-size:14px} button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .grow{flex:1 1 200px;min-width:0;word-break:break-word}
+  .spread{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+  .price{color:var(--mute);font-size:14px;flex:1 1 220px}
+  .deepbox{border:1px dashed var(--line);border-radius:14px;padding:10px 12px;margin-top:12px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;justify-content:center}
+  .chip{background:var(--card);border:1px solid var(--line);color:var(--ink);font-weight:500;font-size:14px;padding:7px 12px}
+  .understood{margin:14px 2px 0;color:var(--mute);font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:16px}
+  .f{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line);flex-wrap:wrap} .f:first-of-type{border-top:0}
+  .tag{flex:none;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid currentColor;height:fit-content}
+  .confirmed,.success,.recorded,.paid{color:var(--ok)} .likely,.pending,.decision{color:var(--warn)} .unknown,.free,.offer,.unavailable{color:var(--unk)} .failed{color:var(--bad)} .noted,.reused{color:var(--note)}
+  .mute{color:var(--mute);font-size:14px} h2{font-size:16px;margin:0 0 4px} h3.sec{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:18px 0 6px}
+  .layer{color:var(--mute);font-size:13px;margin:0 0 8px}
+  :root{--up:#1a9e5c;--down:#d6453d} @media (prefers-color-scheme:dark){:root{--up:#3fbf7f;--down:#ef6a62}}
+  .pricebox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 14px} .pricebox .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap} .pricebox .big{font-size:22px;font-weight:700} .pricebox .up{color:var(--up);font-weight:600} .pricebox .down{color:var(--down);font-weight:600} .bars{margin-top:12px}
+.bars svg.line{width:100%;height:70px;display:block}
+.bars svg.up{color:var(--up)}.bars svg.down{color:var(--down)}.bars svg.flat{color:var(--unk)} .bars .col{flex:1;position:relative;height:100%} .bars i{position:absolute;left:18%;right:18%;border-radius:2px;display:block} .bars i.up{background:var(--up)} .bars i.down{background:var(--down)} .bars i.flat{background:var(--unk)}
+  .tag.rf{color:var(--bad)} .tag.rv{color:#a15c00} .tag.lm{color:var(--ok)}
+  .badge{background:var(--warn);color:var(--card);border-radius:99px;padding:1px 8px;font-size:12px;font-weight:600}
+  .hash{font-family:ui-monospace,monospace;font-size:13px;word-break:break-all}
+  .banner{border:2px solid currentColor;border-radius:16px;padding:14px 16px;margin-top:16px;background:var(--card)}
+  .banner .t{font-size:20px;font-weight:700} .banner .s{color:var(--ink);margin-top:2px} .banner .r{margin-top:8px;font-size:15px;color:var(--ink)}
+  .notfound,.unclear{color:var(--unk)}
+  details{margin-top:6px} summary{cursor:pointer;color:var(--mute);font-size:13px}
+  ul.det{margin:6px 0 0 18px;padding:0;font-size:13px;color:var(--mute);font-family:ui-monospace,monospace;word-break:break-all}
+  .verdict{font-weight:600;margin:6px 0 2px}
+  .amt{font-variant-numeric:tabular-nums;font-weight:600}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px} .tile b{display:block;font-size:24px;line-height:1.2} .tile span{color:var(--mute);font-size:13px}
+  .intro{color:var(--mute);margin:0 0 6px}
+  .fine{text-align:center;color:var(--mute);font-size:13px;margin:10px 0 0}
+  .stage{border-top:1px solid var(--line);padding:8px 0} .stage:first-of-type{border-top:0}
+  .stagehead{font-weight:700;margin-bottom:2px}
+  .answer{background:var(--accentsoft);border-radius:14px;padding:10px 12px;margin-top:10px}
+  .unread{font-weight:600}
+  ul.plain{margin:4px 0 4px 18px;padding:0}
+  [hidden]{display:none!important}
 </style>
 </head>
 <body>
-
-<header class="appbar">
-  <div class="wrap in">
-    <a class="brand" href="#top"><span class="logo">E</span><b>Telegraph <span class="long">Evaluator</span></b></a>
-    <nav class="nav" aria-label="Page">
-      <a class="opt" href="#checkers">Live checkers</a>
-      <a class="opt" href="#sources">All sources</a>
-      <button class="theme" id="theme" type="button" aria-label="Switch between dark and light mode"><span id="themeIcon">☀</span><span id="themeText">Light</span></button>
-    </nav>
-  </div>
+<header class="top">
+  <div class="bar"><div class="logo">O</div><div class="brand">Onchain Assistant</div><span class="pill">Celo</span></div>
+  <nav class="tabs"><div class="seg" role="tablist">
+    <button id="tab-chat" class="on">Chat</button><button id="tab-perms">Permissions</button><button id="tab-wallets">Watchlist<span id="alertBadge" class="badge" hidden style="margin-left:6px"></span></button><button id="tab-activity">Activity</button><button id="tab-payments">Payments</button>
+  </div></nav>
 </header>
-
-<main id="top">
-<section class="hero">
-  <div class="wrap">
-    <span class="pill-top"><span class="dot"></span>Telegraph Hackathon Season II · Evaluators</span>
-    <h1>Truth sources Telegraph can score miners against.</h1>
-    <p class="lede">Telegraph scores its miners by comparing their answers with a trusted reference. These are the references I contribute: public, keyless sources that give one checkable answer, and that return an error rather than a guess when they cannot.</p>
-    <div class="btns">
-      <a class="btn primary" href="#checkers">Try the live checkers</a>
-      <a class="btn" href="#sources">See all sources</a>
+<main>
+  <section id="chat">
+    <div class="hero" id="hero">
+      <div class="ic">?</div>
+      <h1>What do you want to understand?</h1>
+      <p>Paste a Celo transaction hash or wallet address. Get a plain explanation of what happened.</p>
     </div>
-    <div class="strip">
-      <div><strong>15 of 15</strong><span>missions covered</span></div>
-      <div><strong>All accepted</strong><span>by evaluator pools</span></div>
-      <div><strong>No key</strong><span>needed for any source</span></div>
-    </div>
-  </div>
-</section>
-
-<section class="block" id="checkers">
-  <div class="wrap">
-    <h2>Try the live checkers.</h2>
-    <p class="muted">Each one runs the same server Telegraph's evaluator pool calls. Tap an example, or type your own.</p>
-    <div class="grid3">
-      <section class="card chk">
-        <h3>CVE severity score</h3>
-        <p>Official CVSS base score for a vulnerability. NIST's own score first; if NIST hasn't scored it yet, the reporting organisation's score from the official CVE record.</p>
-        <div class="chips-i"><span class="tag">CVE_LOOKUP_CVSS</span><span class="tag">VULNERABILITY_TRIAGE_GENERAL</span></div>
-        <form id="cve-form">
-          <input id="cve-id" value="CVE-2021-44228" aria-label="CVE ID" autocomplete="off">
-          <button class="go">Check</button>
-        </form>
-        <div class="ex"><button type="button" class="chip" data-for="cve" data-v="CVE-2021-44228">Log4Shell</button><button type="button" class="chip" data-for="cve" data-v="CVE-2024-3094">xz backdoor</button></div>
-        <div class="out" id="cve-out"><span class="muted">Try CVE-2021-44228 (Log4Shell) or CVE-2024-3094 (xz backdoor).</span></div>
-      </section>
-
-      <section class="card chk">
-        <h3>What the weather actually was</h3>
-        <p>A past day's high, low, rainfall and main weather at a named place, the side an old forecast is checked against. Any day back to 1940, in the place's own time zone.</p>
-        <div class="chips-i"><span class="tag">WEATHER_FORECAST_VERIFY_GENERAL</span></div>
-        <form id="wx-form">
-          <input id="wx-place" value="Lagos" aria-label="Place" autocomplete="off">
-          <input id="wx-date" type="date" aria-label="Date">
-          <button class="go">Check</button>
-        </form>
-        <div class="ex"><button type="button" class="chip" data-for="wx" data-v="Lagos">Lagos</button><button type="button" class="chip" data-for="wx" data-v="Lagos, Portugal">Lagos, Portugal</button></div>
-        <div class="out" id="wx-out"><span class="muted">Try "Lagos" and "Lagos, Portugal": same name, different place.</span></div>
-      </section>
-
-      <section class="card chk">
-        <h3>US airport disruption right now</h3>
-        <p>Ground stops, ground delay programs, arrival and departure delays and closures at US airports, live from the FAA. A route counts as disrupted if any airport on it is.</p>
-        <div class="chips-i"><span class="tag">TRAVEL_DISRUPTION_GENERAL</span></div>
-        <form id="tr-form">
-          <input id="tr-q" value="JFK-ATL" aria-label="Airport, route or flight" autocomplete="off">
-          <button class="go">Check</button>
-        </form>
-        <div class="ex"><button type="button" class="chip" data-for="tr" data-v="SFO">SFO</button><button type="button" class="chip" data-for="tr" data-v="JFK-ATL">JFK-ATL</button><button type="button" class="chip" data-for="tr" data-v="DL404 at ATL">DL404 at ATL</button></div>
-        <div class="out" id="tr-out"><span class="muted">Try an airport (SFO), a route (JFK-ATL) or a flight with its airport (DL404 at ATL).</span></div>
-      </section>
-    </div>
-  </div>
-</section>
-
-<section class="block" id="sources">
-  <div class="wrap">
-    <h2>All my truth sources.</h2>
-    <p class="muted">Seven sources, covering all 15 hackathon missions. Each is public, needs no key, and returns an error when it cannot answer.</p>
-    <div class="src">
-      <article class="s"><h3>CVE severity scores</h3><p class="ref">NIST National Vulnerability Database, with CVE.org as fallback.</p><div class="intents"><span class="tag">CVE_LOOKUP_CVSS</span><span class="tag">VULNERABILITY_TRIAGE_GENERAL</span></div><a class="try" href="#cve-form">Try it above <i>&darr;</i></a></article>
-      <article class="s"><h3>Observed weather on a past day</h3><p class="ref">Open-Meteo, the reference Telegraph names for this Intent.</p><div class="intents"><span class="tag">WEATHER_FORECAST_VERIFY_GENERAL</span></div><a class="try" href="#wx-form">Try it above <i>&darr;</i></a></article>
-      <article class="s"><h3>US airport disruption now</h3><p class="ref">FAA National Airspace System status.</p><div class="intents"><span class="tag">TRAVEL_DISRUPTION_GENERAL</span></div><a class="try" href="#tr-form">Try it above <i>&darr;</i></a></article>
-      <article class="s"><h3>Company registry details</h3><p class="ref">GLEIF, the global Legal Entity Identifier register.</p><div class="intents"><span class="tag">CORPORATE_REGISTRY_LOOKUP_GENERAL</span></div><a class="try" href="https://api.gleif.org/api/v1/lei-records/W38RGI023J3WT1HWRP32" target="_blank" rel="noopener">Siemens AG record <i>&#8599;</i></a></article>
-      <article class="s"><h3>Exchange rates</h3><p class="ref">European Central Bank reference rates.</p><div class="intents"><span class="tag">FX_NOW_EUR</span><span class="tag">FX_NOW_CAD</span><span class="tag">FX_NOW_SEK</span></div><a class="try" href="https://api.frankfurter.dev/v1/latest?from=EUR&amp;to=USD" target="_blank" rel="noopener">EUR to USD now <i>&#8599;</i></a></article>
-      <article class="s"><h3>Macro indicators (GDP growth and similar)</h3><p class="ref">IMF and World Bank.</p><div class="intents"><span class="tag">MACRO_ECONOMIC_INDICATOR</span></div><a class="try" href="https://api.worldbank.org/v2/country/NG/indicator/SL.UEM.TOTL.ZS?format=json&amp;mrv=3" target="_blank" rel="noopener">Nigeria unemployment <i>&#8599;</i></a></article>
-      <article class="s"><h3>DeFi pool liquidity</h3><p class="ref">DexScreener and GeckoTerminal, read at the same moment.</p><div class="intents"><span class="tag">LIQUIDITY_DEPTH_VERIFY_GENERAL</span></div><a class="try" href="seller-check.html">Seller check tool <i>&#8599;</i></a></article>
-    </div>
-  </div>
-</section>
-
-<section class="block">
-  <div class="wrap">
-    <details class="fold" id="fold-how">
-      <summary>How each answer can be checked</summary>
-      <div class="fold-body">
-        <p class="muted">Every answer from the live checkers says where it came from: which organisation scored the CVE and which CVSS version, or which place was matched, its coordinates and which data set was used. Unknown CVEs, unscored CVEs, unknown places and days that haven't finished return an error, so a miner is never marked wrong against a guessed reference.</p>
-        <p class="muted" style="margin-bottom:0">The four endpoints are free and keyless:</p>
-        <div class="ep"><code id="ep1">https://telegraph-evaluator.vercel.app/api/truth/cve?cve_id=…</code><button class="copy" type="button" data-c="ep1">Copy</button></div>
-        <div class="ep"><code id="ep2">https://telegraph-evaluator.vercel.app/api/truth/weather?location=…&amp;date=YYYY-MM-DD</code><button class="copy" type="button" data-c="ep2">Copy</button></div>
-        <div class="ep"><code id="ep3">https://telegraph-evaluator.vercel.app/api/truth/travel?route_or_flight=…</code><button class="copy" type="button" data-c="ep3">Copy</button></div>
-        <div class="ep"><code id="ep4">https://telegraph-evaluator.vercel.app/api/truth/b2b?domain=…</code><button class="copy" type="button" data-c="ep4">Copy</button></div>
+    <form id="askf" class="askcard">
+      <label class="q" for="q">Ask about a transaction or wallet</label>
+      <textarea id="q" rows="2" placeholder="e.g. Why did this fail? 0x... (or paste a wallet address)" autocomplete="off" spellcheck="false"></textarea>
+      <div class="deepbox">
+        <label><input type="checkbox" id="deep"> <strong>Deep Investigation</strong> (optional)</label>
+        <div class="mute">Gets additional information from __PROVIDER__, through Buy.</div>
+        <div id="pickerSlot" style="margin-top:8px"></div>
       </div>
-    </details>
-  </div>
-</section>
+      <div class="spread"><span class="price">A paid check only starts when you ask for it. ChainLens pays for it.</span><button type="submit">Investigate</button></div>
+    </form>
+    <p class="fine">Read-only. No wallet connection. No keys.</p>
+    <div class="chips" id="chips"></div>
+    <p class="understood" id="understood" hidden></p>
+    <div id="out"></div>
+  </section>
+
+  <section id="perms" hidden>
+    <h1 style="font-size:22px;margin:4px 0 6px">Who can spend your tokens?</h1>
+    <p class="intro">Paste a Celo wallet address. ChainLens lists the contracts that were given permission to spend its tokens, in plain words. Read-only: nothing is connected and nothing can be moved or cancelled here.</p>
+    <form id="pf" class="row"><input type="text" id="pa" placeholder="0x... wallet address" autocomplete="off" spellcheck="false" style="flex:1 1 260px;width:auto"><button>Check</button></form>
+    <p class="price" style="margin:8px 0">The check is free. A Deep Investigation (Chainstack, through Buy) only starts when you ask for it. ChainLens pays for it.</p>
+    <div id="pout2"></div>
+  </section>
+
+  <section id="wallets" hidden>
+    <div id="priceBox"></div>
+    <div id="alertsBox"></div>
+    <p class="intro">Watch public Celo wallets. For each one: what it holds, what it did recently, and what stands out. Your list is kept in this browser only.</p>
+    <form id="wf" class="row"><input type="text" id="wa" placeholder="0x... wallet address" autocomplete="off" spellcheck="false" style="flex:1 1 260px;width:auto"><input type="text" id="wl" placeholder="Label (optional)" style="flex:0 1 160px;width:auto"><button>Add</button></form>
+    <div id="wout"></div>
+  </section>
+
+  <section id="activity" hidden>
+    <p class="intro">Every decision ChainLens makes, including when it chooses not to pay. ChainLens never pays by itself. A paid check starts only when a person asks for one.</p>
+    <div id="aout"></div>
+  </section>
+
+  <section id="payments" hidden>
+    <p class="intro">Proof of every paid call: what was bought, from whom, and the payment on Celo. ChainLens pays for these through Buy. Users pay nothing.</p>
+    <div id="pout"></div>
+  </section>
 </main>
-
-<footer>
-  <div class="wrap">
-    <div class="foot-links">
-      <a href="https://github.com/investor567768/telegraph-evaluator">Code <span>&#8599;</span></a>
-      <a href="seller-check.html">Seller check tool <span>&#8599;</span></a>
-    </div>
-    <p>Built by Chrysolite for Telegraph Hackathon Season II, Evaluators track.</p>
-  </div>
-</footer>
-
 <script>
-  /* scroll reveal */
-  (function(){
-    const noAnim = matchMedia('(prefers-reduced-motion: reduce)').matches || new URLSearchParams(location.search).has('noanim') || !('IntersectionObserver' in window);
-    if (innerWidth >= 900) document.querySelectorAll('details.fold').forEach(d => d.open = true);
-    if (noAnim) return;
-    document.documentElement.classList.add('js');
-    const sel = '.block h2, .block > .wrap > p, .grid3 > .card, .src > .s, details.fold, .foot-links, footer p';
-    const els = [...document.querySelectorAll(sel)];
-    els.forEach(el => {
-      el.classList.add('rv');
-      const sibs = [...el.parentElement.children].filter(x => els.includes(x));
-      el.style.setProperty('--d', Math.min(sibs.indexOf(el) * 0.08, 0.4) + 's');
-    });
-    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
-    els.forEach(el => io.observe(el));
-  })();
+const $ = (id) => document.getElementById(id);
+const link = (href, text) => { const a = document.createElement("a"); a.href = href; a.textContent = text; a.target = "_blank"; a.rel = "noopener noreferrer"; return a; };
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const shortAddr = (a) => (a && a.length > 14 ? a.slice(0, 6) + "..." + a.slice(-4) : a || "");
+const when = (iso) => { try { return new Date(iso).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
+const clock = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
 
-  /* theme */
-  const root = document.documentElement;
-  function setTheme(t, save) {
-    root.setAttribute('data-theme', t);
-    document.getElementById('themeIcon').textContent = t === 'dark' ? '☀' : '☾';
-    document.getElementById('themeText').textContent = t === 'dark' ? 'Light' : 'Dark';
-    if (save) { try { localStorage.setItem('te-theme', t); } catch (e) {} }
-  }
-  let start = 'dark';
-  try { const s = localStorage.getItem('te-theme'); if (s === 'light' || s === 'dark') start = s; } catch (e) {}
-  const qp = new URLSearchParams(location.search).get('theme'); if (qp === 'light' || qp === 'dark') start = qp;
-  setTheme(start, false);
-  document.getElementById('theme').addEventListener('click', () => setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true));
+// A random ID for this browser, so the Payments page can count how many different people used the app.
+let sid = store.get("chainlens.sid", null);
+if (!sid) { sid = "u_" + Math.random().toString(36).slice(2, 12).padEnd(8, "x"); store.set("chainlens.sid", sid); }
+const api = (path) => fetch(path + (path.includes("?") ? "&" : "?") + "sid=" + encodeURIComponent(sid)).then((r) => r.json());
 
-  /* copy endpoints */
-  document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', async () => {
-    const t = document.getElementById(b.dataset.c).textContent;
-    try { await navigator.clipboard.writeText(t); b.textContent = 'Copied'; } catch (e) { b.textContent = 'Select and copy'; }
-    setTimeout(() => b.textContent = 'Copy', 1600);
-  }));
+// ---- tabs
+const TABS = ["chat", "perms", "wallets", "activity", "payments"];
+function show(which) {
+  for (const t of TABS) { $(t).hidden = t !== which; $("tab-" + t).className = t === which ? "on" : ""; }
+  if (which === "wallets") { startPrice(); renderAlerts(); renderWatch(); markAlertsRead(); }
+  if (which === "activity") renderActivity();
+  if (which === "payments") renderPayments();
+}
+for (const t of TABS) $("tab-" + t).onclick = () => show(t);
 
-  /* live checkers (same servers and paths as before) */
-  const API = 'https://telegraph-evaluator.vercel.app';
-  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  async function run(url, out, render, btn) {
-    btn.disabled = true;
-    out.innerHTML = '<span class="muted">Checking…</span>';
-    try {
-      const r = await fetch(url);
-      const j = await r.json();
-      out.innerHTML = r.ok ? render(j) : `<span class="err">${esc(j.error || 'No answer')}</span>`;
-      out.innerHTML += `<details><summary>Raw answer</summary><pre>${esc(JSON.stringify(j, null, 2))}</pre></details>`;
-    } catch (e) {
-      out.innerHTML = '<span class="err">Could not reach the checker. Try again.</span>';
+// ---- reason picker (optional everywhere)
+const REASONS = [["", "Choose a reason (optional)"], ["failed", "Why did it fail?"], ["pending", "Why is it stuck?"], ["movements", "Check unexpected token movements"], ["verify", "Get more detailed verification"], ["other", "Other (add a note)"]];
+function reasonPicker(initial) {
+  const wrap = el("div", "row");
+  const sel = document.createElement("select"); sel.style.flex = "1 1 200px"; sel.style.width = "auto";
+  for (const [v, t] of REASONS) { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.append(o); }
+  sel.value = initial || "";
+  const note = document.createElement("input"); note.type = "text"; note.maxLength = 200; note.placeholder = "What do you want to know? (saved as a note only)"; note.style.flex = "1 1 220px"; note.style.width = "auto";
+  note.hidden = sel.value !== "other";
+  sel.onchange = () => { note.hidden = sel.value !== "other"; };
+  wrap.append(sel, note);
+  return { wrap, get: () => ({ purpose: sel.value, note: sel.value === "other" ? note.value : "" }) };
+}
+const topPicker = reasonPicker("");
+$("pickerSlot").append(topPicker.wrap);
+
+// ---- chat: ask bar
+const out = $("out");
+const understood = (msg) => { $("understood").textContent = msg || ""; $("understood").hidden = !msg; };
+const CHIPS = [["Who can spend my tokens?", "__perms__"], ["Explain a transaction", "Explain this transaction: "], ["Why did it fail?", "Why did this fail? "], ["Why is it stuck?", "Why is my transaction stuck? "], ["What is in a wallet?", "What is in this wallet? "]];
+for (const [label, prefix] of CHIPS) { const b = el("button", "chip", label); b.type = "button"; b.onclick = () => { if (prefix === "__perms__") { show("perms"); $("pa").focus(); return; } $("q").value = prefix; $("q").focus(); }; $("chips").append(b); }
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("askf").requestSubmit(); } });
+$("askf").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const text = $("q").value.trim();
+  if (!text) { understood("Paste a transaction hash or a wallet address first."); return; }
+  out.replaceChildren(el("p", "mute", "Reading your question..."));
+  try {
+    const r = await api("/api/ask?q=" + encodeURIComponent(text));
+    understood(r.understood);
+    if (r.kind === "tx") { $("hero").hidden = true; investigate(r.hash, { deep: r.deep || $("deep").checked, purpose: r.purpose || undefined, keepMessage: true }); }
+    else if (r.kind === "permissions") { runPerms(r.address); out.replaceChildren(); }
+    else if (r.kind === "wallet") { $("hero").hidden = true; out.replaceChildren(buildWallet({ address: r.address, label: "" }, false).node); }
+    else out.replaceChildren();
+  } catch { out.replaceChildren(el("p", "mute", "Could not reach the app. Is it running?")); }
+});
+
+// Basic first, then the Deep Investigation fills in.
+async function investigate(hash, opts = {}) {
+  show("chat"); $("hero").hidden = true; $("q").value = hash;
+  if (!opts.keepMessage) understood("Basic investigation");
+  const deep = opts.deep !== undefined ? opts.deep : $("deep").checked;
+  const pick = opts.purpose !== undefined ? { purpose: opts.purpose, note: opts.note || "" } : topPicker.get();
+  out.replaceChildren(el("p", "mute", "Investigating..."));
+  try {
+    const q = "hash=" + encodeURIComponent(hash) + (deep ? "&deep=1" : "") + (pick.purpose ? "&purpose=" + encodeURIComponent(pick.purpose) : "") + (pick.note ? "&note=" + encodeURIComponent(pick.note) : "");
+    const d = await api("/api/investigate?" + q);
+    renderInv(d);
+    if (d.ok && d.paid && d.paid.pending) {
+      const p = await api("/api/paid?inv=" + encodeURIComponent(d.investigationId));
+      if (p.ok) { d.findings = d.findings.concat(p.findings); d.paid = p.paid; d.deep = p.deep; if (p.headline) d.headline = p.headline; if (p.autopsy) d.autopsy = p.autopsy; }
+      else { d.deep = { state: "unavailable", text: p.error }; d.paid = { used: false }; }
+      renderInv(d);
     }
-    btn.disabled = false;
+  } catch { out.replaceChildren(el("p", "mute", "Could not reach the app. Is it running?")); }
+}
+
+function renderFinding(x, withSource) {
+  const row = el("div", "f"); row.append(el("span", "tag " + x.confidence, x.confidence));
+  const body = el("div", "grow"); body.append(el("div", null, x.text));
+  if (x.why) body.append(el("div", "mute", "Why: " + x.why));
+  if (withSource && x.source) body.append(el("div", "mute", "Source: " + x.source));
+  if (x.technical && x.technical.length) {
+    const dt = document.createElement("details"); dt.append(el("summary", null, "Technical details"));
+    const ul = el("ul", "det"); for (const t of x.technical) ul.append(el("li", null, t)); dt.append(ul); body.append(dt);
   }
-  const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-  const wxDate = document.getElementById('wx-date');
-  wxDate.value = y; wxDate.max = y;
+  row.append(body); return row;
+}
 
-  document.getElementById('cve-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const id = document.getElementById('cve-id').value.trim();
-    run(API + '/api/truth/cve?cve_id=' + encodeURIComponent(id), document.getElementById('cve-out'),
-      j => `<div class="big">${esc(j.cvss_score)} ${esc(j.severity || '')}</div><div class="muted">CVSS ${esc(j.cvss_version)} · scored by ${esc(j.score_source)} · <a href="${esc(j.source_url)}" target="_blank" rel="noopener">check at NIST &#8599;</a></div>`,
-      e.submitter || e.target.querySelector('button'));
+function techList(items) {
+  const dt = document.createElement("details"); dt.append(el("summary", null, "Technical details"));
+  const ul = el("ul", "det"); for (const t of items) ul.append(el("li", null, t)); dt.append(ul); return dt;
+}
+function renderAnswer(box, r) {
+  box.replaceChildren();
+  if (!r.ok) { box.append(el("p", "mute", r.error || "Could not answer that.")); return; }
+  const a = el("div", "answer"); a.append(el("strong", null, r.question));
+  for (const l of r.lines) { const row = el("div", "f"); row.append(el("span", "tag " + l.level, l.level)); row.append(el("div", "grow", l.text)); a.append(row); }
+  if (r.paymentTxHash) { const lp = el("p", "mute"); lp.append(link("https://celoscan.io/tx/" + r.paymentTxHash, "Verify the payment on Celoscan")); a.append(lp); }
+  box.append(a);
+}
+function renderAutopsy(d) {
+  const a = d.autopsy; if (!a) return null;
+  const c = el("div", "card"); const head = el("div", "row");
+  head.append(el("h2", "grow", "Transaction Autopsy"), el("span", "tag " + (a.state === "success" ? "success" : a.state === "failed" ? "failed" : a.state === "pending" ? "pending" : "unknown"), a.outcome));
+  c.append(head, el("p", "layer", "What happened, step by step. Built only from evidence. Nothing is guessed."));
+  a.stages.forEach((s, i) => {
+    const st = el("div", "stage"); st.append(el("div", "stagehead", (i + 1) + ". " + s.title));
+    for (const l of s.lines) {
+      const r = el("div", "f"); r.append(el("span", "tag " + l.level, l.level));
+      const b = el("div", "grow"); b.append(el("div", null, l.text));
+      if (l.source) if (l.source === "deep") b.append(el("div", "mute", "Source: __PROVIDER__, through Buy"));
+      if (l.technical && l.technical.length) b.append(techList(l.technical));
+      r.append(b); st.append(r);
+    }
+    c.append(st);
   });
-  document.getElementById('wx-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const place = document.getElementById('wx-place').value.trim();
-    run(API + '/api/truth/weather?location=' + encodeURIComponent(place) + '&date=' + encodeURIComponent(wxDate.value), document.getElementById('wx-out'),
-      j => `<div class="big">${esc(j.temp_max_c)}° / ${esc(j.temp_min_c)}°C · ${esc(j.precipitation_mm)} mm · ${esc(j.condition)}</div><div class="muted">${esc(j.location)} (${esc(j.latitude)}, ${esc(j.longitude)}) · ${esc(j.date)} · ${esc(j.data_source)}</div>`,
-      e.submitter || e.target.querySelector('button'));
-  });
-  document.getElementById('tr-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const q = document.getElementById('tr-q').value.trim();
-    run(API + '/api/truth/travel?route_or_flight=' + encodeURIComponent(q), document.getElementById('tr-out'),
-      j => `<div class="big ${j.disrupted ? 'bad' : 'ok'}">${j.disrupted ? 'Disrupted' : 'No disruption'}${j.delay_minutes ? ' · up to ' + esc(j.delay_minutes) + ' min' : ''}</div><div class="muted">${esc(j.status)} · FAA updated ${esc(j.faa_updated)}</div>`,
-      e.submitter || e.target.querySelector('button'));
-  });
+  if (a.unknown.length) { c.append(el("h3", "sec", "What remains unknown")); const ul = el("ul", "plain"); for (const u of a.unknown) ul.append(el("li", null, u)); c.append(ul); }
+  c.append(el("h3", "sec", "Where this comes from"));
+  for (const e of a.evidence) { const p = el("p", "mute", e.label + ": " + e.detail + " "); if (e.paymentTxHash) p.append(link("https://celoscan.io/tx/" + e.paymentTxHash, "Verify the payment")); c.append(p); }
+  if (a.needsDeep) {
+    const btn = el("button", null, "Run Deep Investigation to fill this in"); btn.style.marginTop = "6px";
+    btn.onclick = () => investigate(d.hash, { deep: true, purpose: a.state === "pending" ? "pending" : "failed" }); c.append(btn);
+    c.append(el("p", "mute", "ChainLens pays for it."));
+  }
+  if (d.followUps && d.investigationId) {
+    c.append(el("h3", "sec", "Ask a follow-up"));
+    const chips = el("div", "chips"); chips.style.justifyContent = "flex-start"; const box = el("div");
+    for (const f of d.followUps) {
+      const b = el("button", "chip", f.label); b.type = "button";
+      b.onclick = async () => { box.replaceChildren(el("p", "mute", "Looking at the evidence...")); try { renderAnswer(box, await api("/api/followup?inv=" + encodeURIComponent(d.investigationId) + "&q=" + f.key)); } catch { box.replaceChildren(el("p", "mute", "Could not reach the app.")); } };
+      chips.append(b);
+    }
+    c.append(chips, box);
+  }
+  return c;
+}
 
-  /* example chips fill the input and run it */
-  const target = { cve: 'cve-id', wx: 'wx-place', tr: 'tr-q' };
-  document.querySelectorAll('.ex .chip').forEach(c => c.addEventListener('click', () => {
-    document.getElementById(target[c.dataset.for]).value = c.dataset.v;
-    document.getElementById(c.dataset.for + '-form').requestSubmit();
-  }));
+function renderInv(d) {
+  out.replaceChildren();
+  if (!d.ok) { const c = el("div", "card"); c.append(el("p", null, d.error)); out.append(c); return; }
+
+  if (d.headline) {
+    const h = d.headline, b = el("div", "banner " + h.state);
+    b.append(el("div", "t", h.title)); b.append(el("div", "s", h.sentence));
+    if (h.reason) { const r = el("div", "r"); r.append(el("span", "tag " + h.reason.level, h.reason.level)); r.append(document.createTextNode(" " + h.reason.text)); b.append(r); }
+    out.append(b);
+  }
+  if (d.hash) { const lp = el("p", "mute"); lp.append(link("https://celoscan.io/tx/" + d.hash, "View this transaction on Celoscan")); out.append(lp); }
+
+  const au = renderAutopsy(d); if (au) out.append(au);
+
+  // One explanation only: the Autopsy carries everything. The plain list is used only when there is no Autopsy
+  // (for example a hash the explorer does not know).
+  if (!au) {
+    const basic = d.findings.filter((x) => (x.layer || "basic") === "basic");
+    const c = el("div", "card"); c.append(el("h2", null, "What happened")); c.append(el("p", "layer", "Basic investigation (free)"));
+    for (const x of basic) c.append(renderFinding(x, false));
+    for (const n of d.notes || []) c.append(el("p", "mute", n));
+    out.append(c);
+  } else if ((d.notes || []).length) {
+    const nc = el("div"); for (const n of d.notes) nc.append(el("p", "mute", n)); out.append(nc);
+  }
+
+  const dp = d.deep || {};
+  const dc = el("div", "card");
+  if (dp.state === "offer") {
+    dc.append(el("h2", null, "Deep Investigation"));
+    if (dp.recommended) { const rec = el("p", null, "The free check was not enough: " + dp.recommended + ". A Deep Investigation may find out more. It is your choice."); rec.style.fontWeight = "600"; dc.append(rec); }
+    dc.append(el("p", "layer", "Gets additional information from __PROVIDER__, through Buy. ChainLens pays about $0.01 for it. It starts only when you press the button."));
+    if (dp.adds && dp.adds.length) { if (dp.adds.length === 1) dc.append(el("p", "mute", "It would " + dp.adds[0].charAt(0).toLowerCase() + dp.adds[0].slice(1))); else { dc.append(el("p", "mute", "For this transaction it would:")); const ul = el("ul", "mute"); for (const a of dp.adds) ul.append(el("li", null, a)); dc.append(ul); } }
+    const picker = reasonPicker(topPicker.get().purpose);
+    const run = el("button", null, "Run Deep Investigation");
+    run.onclick = () => { const g = picker.get(); investigate(d.hash, { deep: true, purpose: g.purpose, note: g.note, keepMessage: false }); };
+    const row = el("div", "row"); row.style.marginTop = "8px"; row.append(picker.wrap, run); dc.append(row);
+    dc.append(el("p", "mute", "Choosing a reason is optional. It only focuses the check."));
+    out.append(dc);
+  } else if (dp.state === "running") {
+    dc.append(el("h2", null, "Deep Investigation in progress"));
+    dc.append(el("p", "mute", (dp.why ? dp.why + " " : "") + "ChainLens is paying __PROVIDER__, through Buy, for additional information. This can take up to a minute."));
+    out.append(dc);
+  } else if (dp.state === "done") {
+    dc.append(el("h2", null, "What the Deep Investigation added"));
+    dc.append(el("p", "layer", "Additional information from __PROVIDER__, through Buy. ChainLens paid for it." + (dp.reused ? " (Previously paid. No new charge.)" : "")));
+    if (dp.why) dc.append(el("p", "mute", dp.why));
+    if (dp.verdict) dc.append(el("p", "verdict", dp.verdict.line));
+    if (dp.completeness) dc.append(el("p", "mute", dp.completeness.text));
+    const deepF = d.findings.filter((x) => x.layer === "deep");
+    if (!au) { for (const x of deepF) dc.append(renderFinding(x, true)); }
+    else {
+      const groups = [["agree", "Confirmed what the free check said"], ["differ", "Disagreed with the free check"], ["new", "New information"], ["missing", "Could not be retrieved"]];
+      const seen = new Set();
+      for (const [k, title] of groups) {
+        const xs = deepF.filter((x) => (groups.some((g) => g[0] === x.kind) ? x.kind : "new") === k);
+        if (!xs.length) continue;
+        dc.append(el("h3", "sec", title));
+        for (const x of xs) { const r = el("div", "f"); r.append(el("span", "tag " + x.confidence, x.confidence)); r.append(el("div", "grow", x.text)); dc.append(r); if (x.technical && x.technical.length) dc.append(techList(x.technical)); }
+      }
+    }
+    const calls = (d.paid && d.paid.perCall) || [];
+    if (calls.length) {
+      const LBL = { eth_getTransactionByHash: "Transaction record", eth_getTransactionReceipt: "Receipt", debug_traceTransaction: "Step-by-step trace of the call", eth_call: "Balance or allowance check", eth_getTransactionCount: "Wallet transaction count", eth_gasPrice: "Current gas price", eth_blockNumber: "Latest block" };
+      dc.append(el("h3", "sec", "What was checked"));
+      const ul = el("ul", "plain");
+      for (const c2 of calls) ul.append(el("li", null, (LBL[c2.method] || c2.method) + ": " + (c2.ok ? "returned data" : "no usable answer" + (c2.error ? " (" + c2.error + ")" : ""))));
+      dc.append(ul);
+    }
+    out.append(dc);
+  } else if (dp.state === "unavailable") {
+    dc.append(el("h2", null, "Deep Investigation"));
+    dc.append(el("p", "mute", "It could not be completed: " + (dp.text || "no reason given") + " The basic investigation above still stands."));
+    out.append(dc);
+  }
+
+  const pd = d.paid || {};
+  if (pd.used) {
+    const L = pd.ledger || {};
+    const payHash = pd.paymentTxHash || L.paymentTxHash;
+    const v = el("details", "card"); v.append(el("summary", null, "Verification details"));
+    v.append(el("p", pd.reused ? "verdict" : "mute", pd.reused ? "Previously paid. No new charge." : "Paid by ChainLens: " + (L.amount || "") + " " + (L.currency || "")));
+    const rows = [
+      ["This investigation", d.investigationId],
+      ["Original payment was made in", pd.reused && L.investigationId && L.investigationId !== d.investigationId ? L.investigationId : null],
+      ["Reason", pd.purposeLabel || null], ["Provider", L.provider], ["Route", L.route],
+      ["Checks requested", (L.requested || []).map((r) => r.method).join(", ")],
+      [pd.reused ? "Paid earlier" : "Amount paid", L.amount ? L.amount + " " + L.currency : null],
+      ["Payment transaction", payHash], ["Result digest (sha-256)", L.resultDigest], ["Status", L.status],
+    ];
+    for (const [k, val] of rows) if (val) { const r = el("div", "f"); r.append(el("span", "mute", k)); r.append(el("span", "grow hash", val)); v.append(r); }
+    if (payHash) {
+      const lp = el("p", "mute"); lp.append(link("https://celoscan.io/tx/" + payHash, "Verify the payment on Celoscan"));
+      lp.append(document.createTextNode(". The link shows the payment of " + (L.amount || "") + " " + (L.currency || "") + " to Buy's gateway on Celo. It does not by itself prove which provider answered; the result digest above records what came back."));
+      v.append(lp);
+    }
+    out.append(v);
+  } else if (d.investigationId) {
+    out.append(el("p", "mute", "Investigation ID: " + d.investigationId));
+  }
+}
+
+// ---- wallets: holdings, recent activity, wallet intelligence
+let watch = store.get("chainlens.watch", []);   // [{address,label,lastSeen}]
+const CHECK_TEXT = {
+  confirmed: "Confirmed by the chain",
+  differs: "The explorer and the chain show different numbers. The balance may have changed between the two checks.",
+  "chain-only": "From a Celo node only",
+  "explorer-only": "From the explorer only, not cross-checked",
+};
+function renderHoldings(box, h) {
+  box.replaceChildren(el("h3", "sec", "Holdings"));
+  if (!h.ok) { box.append(el("p", "mute", "Could not read balances right now. This does not mean the wallet is empty. (" + h.error + ")")); return; }
+  const line = (x, sym) => {
+    const r = el("div", "f"); r.append(el("span", "amt", x.amount + " " + sym));
+    const b = el("div", "mute grow");
+    if (x.check === "differs") {
+      b.textContent = "The explorer shows " + x.explorerAmount + " and a Celo node shows " + x.chainAmount + ". The figure shown is the node's reading of the chain. The two can differ if the explorer is behind or the balance changed between the checks.";
+      if (x.explorerHadToken === false) b.textContent += " The explorer did not list this token for the wallet.";
+    } else b.textContent = (CHECK_TEXT[x.check] || "") + (x.explorerNotListed ? ". The explorer did not list this token for the wallet" : "");
+    r.append(b); box.append(r);
+  };
+  if (h.native && h.native.amount !== null) line(h.native, "CELO");
+  for (const t of h.tokens) line(t, t.symbol);
+  if (h.empty) box.append(el("p", "mute", "No CELO or tokens found for this address."));
+  else if (!h.tokens.length) box.append(el("p", "mute", "No well-known stablecoin balance found."));
+  if (h.other && h.other.length) {
+    const d = document.createElement("details"); d.append(el("summary", null, "Other tokens (unverified): " + h.other.length));
+    const ul = el("ul", "det"); for (const t of h.other) ul.append(el("li", null, t.amount + " " + t.symbol + (t.name ? " (" + t.name + ")" : ""))); d.append(ul);
+    d.append(el("p", "mute", "Anyone can create a token with any name. These were not checked, and no value is shown."));
+    box.append(d);
+  }
+  for (const n of h.notes || []) box.append(el("p", "mute", n));
+  const src = [h.sources && h.sources.explorer ? "the Celo explorer" : null, h.sources && h.sources.chain ? "a public Celo node" : null].filter(Boolean).join(" and ");
+  box.append(el("p", "mute", "Checked at " + clock(h.checkedAt) + (src ? " from " + src : "") + ". No dollar values are shown."));
+}
+
+function renderIntel(box, intel, change, changes) {
+  box.replaceChildren(el("h3", "sec", "Wallet intelligence"));
+  if (change) box.append(el("p", null, change));
+  if (changes && changes.length) {
+    box.append(el("p", "mute", "What changed since you last looked:"));
+    for (const c of changes) {
+      const r = el("div", "f"); r.append(el("span", "tag " + c.status, c.status));
+      const b = el("div", "grow"); b.append(el("div", "unread", c.summary)); if (c.when) b.append(el("div", "mute", c.when));
+      const ul = el("ul", "plain"); for (const t of c.lines) ul.append(el("li", null, t)); b.append(ul);
+      const eb = el("button", "small ghost", "Explain"); eb.onclick = () => investigate(c.hash); b.append(eb);
+      r.append(b); box.append(r);
+    }
+  }
+  if (!intel) return;
+  if (intel.signals.length) {
+    box.append(el("p", "mute", "Worth a look. These are counted from the " + intel.window.events + " recent events checked. They describe patterns; they do not say why they happened."));
+    for (const s of intel.signals) {
+      const r = el("div", "f"); r.append(el("span", "tag noted", "noted"));
+      const b = el("div", "grow"); b.append(el("div", null, s.text));
+      if (s.technical && s.technical.length) { const dt = document.createElement("details"); dt.append(el("summary", null, "Technical details")); const ul = el("ul", "det"); for (const t of s.technical) ul.append(el("li", null, t)); dt.append(ul); b.append(dt); }
+      if (s.suggest) { const btn = el("button", "small ghost", s.suggest.label); btn.style.marginTop = "6px"; btn.onclick = () => investigate(s.suggest.hash, s.suggest.purpose ? { deep: true, purpose: s.suggest.purpose } : { deep: false, purpose: "" }); b.append(btn); }
+      r.append(b); box.append(r);
+    }
+  } else if (intel.statement) box.append(el("p", "mute", intel.statement));
+  if (intel.partial) box.append(el("p", "mute", intel.partial));
+}
+
+function buildWallet(w, watched) {
+  const card = el("div", "card"); const head = el("div", "row");
+  head.append(el("strong", "grow", (w.label ? w.label + " " : "") + w.address.slice(0, 8) + "..." + w.address.slice(-6)));
+  const badge = el("span", "badge", ""); badge.hidden = true; head.append(badge);
+  const rb = el("button", "small ghost", "Refresh"); head.append(rb);
+  let xb = null;
+  if (watched) {
+    const lab = el("label", "mute"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = w.alerts !== false;
+    cb.onchange = () => { w.alerts = cb.checked; store.set("chainlens.watch", watch); };
+    lab.append(cb, document.createTextNode(" Alerts")); head.append(lab);
+    xb = el("button", "small ghost", "Remove"); head.append(xb);
+  }
+  else { xb = el("button", "small", "Watch this wallet"); xb.onclick = () => { if (!watch.some((x) => x.address.toLowerCase() === w.address.toLowerCase())) watch.push({ address: w.address, label: "", lastSeen: null }); store.set("chainlens.watch", watch); xb.textContent = "Added to Wallets"; xb.disabled = true; }; head.append(xb); }
+  card.append(head);
+  const hold = el("div"), intelBox = el("div"), list = el("div");
+  list.append(el("h3", "sec", "Recent activity"));
+  card.append(hold, intelBox, list);
+
+  const load = async () => {
+    badge.hidden = true;
+    hold.replaceChildren(el("h3", "sec", "Holdings"), el("p", "mute", "Loading..."));
+    intelBox.replaceChildren(); list.replaceChildren(el("h3", "sec", "Recent activity"), el("p", "mute", "Loading..."));
+    api("/api/holdings?address=" + encodeURIComponent(w.address)).then((h) => renderHoldings(hold, h)).catch(() => hold.replaceChildren(el("h3", "sec", "Holdings"), el("p", "mute", "Could not read balances right now.")));
+    try {
+      const d = await api("/api/wallet?address=" + encodeURIComponent(w.address) + (watched && w.lastSeen ? "&since=" + encodeURIComponent(w.lastSeen) : ""));
+      list.replaceChildren(el("h3", "sec", "Recent activity"));
+      if (!d.ok) { list.append(el("p", "mute", "Could not load activity for this address right now. This does not mean it has none. (" + d.error + ")")); return; }
+      if (d.state === "none") list.append(el("p", "mute", "The explorer shows no transactions or token transfers for this address."));
+      if (d.state === "incomplete") list.append(el("p", "mute", "Some activity could not be loaded, so we cannot say whether this address has any. This does not mean it has none."));
+      const hadSeen = !!w.lastSeen;
+      const seenIdx = hadSeen ? d.items.findIndex((i) => i.hash === w.lastSeen) : -1;
+      const fresh = hadSeen ? (seenIdx === -1 ? d.items.length : seenIdx) : 0;
+      if (fresh > 0) { badge.textContent = fresh + " new"; badge.hidden = false; }
+      d.items.forEach((it) => {
+        const r = el("div", "f"); r.append(el("span", "tag " + it.status, it.status));
+        const b = el("div", "grow"); b.append(el("div", null, it.summary)); b.append(el("div", "mute", it.when || ""));
+        r.append(b); const eb = el("button", "small ghost", "Explain"); eb.onclick = () => investigate(it.hash); r.append(eb); list.append(r);
+      });
+      const last = d.items.find((i) => i.when);
+      let change = null;
+      if (d.items.length) {
+        if (!watched) change = null;
+        else if (!hadSeen) change = "First time viewing this wallet.";
+        else if (fresh === 0) change = "Nothing new since you last viewed this wallet. Last activity: " + (last ? last.when : "unknown") + ".";
+        else change = fresh + (fresh === 1 ? " new item" : " new items") + " since you last viewed this wallet: " + d.items.slice(0, Math.min(fresh, 3)).map((i) => i.summary).join("; ") + (fresh > 3 ? "; and more." : ".");
+      }
+      renderIntel(intelBox, d.intel, change, d.changes);
+      for (const n of d.notes || []) list.append(el("p", "mute", n));
+      list.append(el("p", "mute", "Checked at " + clock(d.checkedAt) + " from " + (d.source || "the Celo explorer") + "."));
+      if (watched && d.items[0]) { w.lastSeen = d.items[0].hash; store.set("chainlens.watch", watch); }
+    } catch { list.replaceChildren(el("h3", "sec", "Recent activity"), el("p", "mute", "Could not load activity for this address right now. This does not mean it has none.")); }
+  };
+  rb.onclick = load;
+  if (watched) xb.onclick = () => { watch = watch.filter((x) => x !== w); store.set("chainlens.watch", watch); renderWatch(); };
+  load();
+  return { node: card, load };
+}
+
+const wout = $("wout");
+$("wf").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const a = $("wa").value.trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(a)) { alert("That does not look like a wallet address (0x + 40 characters)."); return; }
+  if (!watch.some((w) => w.address.toLowerCase() === a.toLowerCase())) watch.push({ address: a, label: $("wl").value.trim(), lastSeen: null });
+  store.set("chainlens.watch", watch); $("wa").value = ""; $("wl").value = ""; renderWatch(); restartPolling();
+});
+// ---- permission check
+const LEVEL = { "review-first": ["rf", "review first"], review: ["rv", "review"], limited: ["lm", "limited"] };
+async function runPerms(address) {
+  show("perms"); $("pa").value = address;
+  const box = $("pout2"); box.replaceChildren(el("p", "mute", "Reading this wallet's permission history. This can take a few seconds..."));
+  let d; try { d = await api("/api/permissions?address=" + encodeURIComponent(address)); } catch { box.replaceChildren(el("p", "mute", "Could not reach the app. Is it running?")); return; }
+  box.replaceChildren();
+  if (!d.ok) { box.append(el("p", "mute", d.error || "Something went wrong.")); return; }
+  const head = el("div", "card");
+  const rf = d.permissions.filter((p) => p.level === "review-first").length;
+  head.append(el("h2", null, d.empty ? "No active spending permissions found" : d.permissions.length + (d.permissions.length === 1 ? " active spending permission" : " active spending permissions")));
+  if (rf) head.append(el("p", null, rf + (rf === 1 ? " is" : " are") + " unlimited and not clearly identified. Worth a look first."));
+  if (d.cancelledCount) head.append(el("p", "mute", d.cancelledCount + " earlier permission" + (d.cancelledCount === 1 ? " was" : "s were") + " already cancelled."));
+  head.append(el("p", "mute", "Checked " + clock(d.checkedAt) + " against a public Celo node. Found through " + (d.source === "sqd" ? "the wallet's full approval history" : "the Celo explorer") + "."));
+  box.append(head);
+  const rows = {};
+  if (d.permissions.length) {
+    const c = el("div", "card");
+    for (const p of d.permissions) {
+      const r = el("div", "f"); const [cls, label] = LEVEL[p.level];
+      r.append(el("span", "tag " + cls, label));
+      const b = el("div", "grow"); b.append(el("div", null, p.text));
+      const meta = el("div", "mute", (p.grantedAt ? "Given " + when(p.grantedAt) + " · " : "") + "token " + shortAddr(p.token) + " · ");
+      if (p.grantTx) { meta.append(link("https://celoscan.io/tx/" + p.grantTx, "approval")); meta.append(document.createTextNode(" · ")); }
+      meta.append(link("https://celoscan.io/address/" + p.spender, "spender"));
+      b.append(meta);
+      const ind = el("div", "mute"); ind.hidden = true; b.append(ind); rows[p.token.toLowerCase() + "|" + p.spender.toLowerCase()] = ind;
+      r.append(b); c.append(r);
+    }
+    box.append(c);
+    const pay = el("div", "card"); pay.append(el("h2", null, "Deep Investigation"));
+    pay.append(el("p", "mute", "Gets additional information from __PROVIDER__, through Buy: it reads these permissions again. ChainLens pays about $0.01 for the whole list. It starts only when you press the button."));
+    const btn = el("button", null, "Run Deep Investigation"); const res = el("div");
+    btn.onclick = async () => {
+      btn.disabled = true; btn.textContent = "Checking..."; res.replaceChildren();
+      let v; try { v = await api("/api/permissions/verify?check=" + encodeURIComponent(d.checkId)); } catch { v = { ok: false, error: "Could not reach the app." }; }
+      btn.disabled = false; btn.textContent = "Run Deep Investigation";
+      if (!v.ok || !v.available) { res.replaceChildren(el("p", "mute", v.error || v.reason || "The check could not be completed.")); return; }
+      const P = v.permissions;
+      res.append(el("p", null, P.agree + " of " + P.checked + " matched the public Celo node." + (P.differ ? " " + P.differ + " did not match, so treat those with care." : "") + (P.noAnswer ? " " + P.noAnswer + " got no answer." : "") + (v.reused ? " Previously paid. No new charge." : "")));
+      if (v.paymentTxHash) { const m = el("p", "mute", "Payment: "); m.append(link("https://celoscan.io/tx/" + v.paymentTxHash, "view on Celoscan")); res.append(m); }
+      for (const x of P.checks) { const ind = rows[x.token.toLowerCase() + "|" + x.spender.toLowerCase()]; if (!ind) continue; ind.hidden = false; ind.textContent = x.state === "agree" ? "Deep Investigation: matches." : x.state === "differ" ? "Deep Investigation: does NOT match. The node said " + x.freeRaw + ", the second source said " + x.paidRaw + "." : "Deep Investigation: no answer."; }
+    };
+    pay.append(btn, res); box.append(pay);
+  }
+  const n = el("div", "card"); n.append(el("h2", null, "What this cannot show"));
+  const ul = el("ul", "plain mute"); for (const t of [...d.notes, ...d.limits]) ul.append(el("li", null, t)); n.append(ul); box.append(n);
+}
+$("pf").addEventListener("submit", (e) => { e.preventDefault(); const a = $("pa").value.trim(); if (a) runPerms(a); });
+
+let priceTimer = null;
+async function loadPrice() {
+  const box = $("priceBox"); if (!box) return;
+  let d; try { d = await api("/api/price"); } catch { d = { ok: false }; }
+  box.replaceChildren();
+  const c = el("div", "pricebox");
+  if (!d.ok) { c.append(el("p", "mute", "CELO price is not available right now.")); box.append(c); return; }
+  const top = el("div", "top"); top.append(el("span", "mute", "CELO"), el("span", "big", d.priceText));
+  if (d.changePct != null) top.append(el("span", d.direction === "down" ? "down" : d.direction === "up" ? "up" : "mute", (d.direction === "down" ? "▼ " : d.direction === "up" ? "▲ " : "") + (d.changePct > 0 ? "+" : "") + d.changePct + "% in 24 hours"));
+  c.append(top);
+  if (d.days && d.days.length) {
+    // A simple line of each day's closing price.
+    const W = 600, H = 70, P = 6, closes = d.days.map((x) => x.close);
+    const hi = Math.max(...closes), lo = Math.min(...closes), span = hi - lo || 1, n = closes.length;
+    const X = (i) => P + (n === 1 ? (W - 2 * P) / 2 : i * (W - 2 * P) / (n - 1)), Y = (v) => P + (hi - v) / span * (H - 2 * P);
+    const NS = "http://www.w3.org/2000/svg", mk = (t, at) => { const e = document.createElementNS(NS, t); for (const k in at) e.setAttribute(k, at[k]); return e; };
+    const dir = closes[n - 1] > closes[0] ? "up" : closes[n - 1] < closes[0] ? "down" : "flat";
+    const svg = mk("svg", { viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "none", class: "line " + dir, role: "img", "aria-label": "CELO daily closing price, last " + n + " days" });
+    svg.append(mk("polyline", { points: closes.map((v, i) => X(i) + "," + Y(v)).join(" "), fill: "none", stroke: "currentColor", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round", "vector-effect": "non-scaling-stroke" }));
+    const bars = el("div", "bars"); bars.append(svg);
+    const tip = el("div", "mute"); tip.style.fontSize = "12px"; tip.textContent = "Daily closing price, last " + n + " days"; bars.append(tip);
+  }
+  box.append(c);
+}
+function startPrice() { loadPrice(); if (!priceTimer) priceTimer = setInterval(loadPrice, 300000); }
+
+function renderWatch() {
+  wout.replaceChildren();
+  if (!watch.length) { wout.append(el("p", "mute", "No wallets yet. Add a public Celo address above.")); return; }
+  for (const w of watch) wout.append(buildWallet(w, true).node);
+}
+
+// ---- activity feed
+const TYPE_LABEL = { free: "free", offer: "offered", decision: "paid decision", paid: "paid", reused: "no charge", unavailable: "unavailable" };
+async function renderActivity() {
+  const box = $("aout"); box.replaceChildren(el("p", "mute", "Loading..."));
+  try {
+    const d = await api("/api/feed");
+    box.replaceChildren();
+    if (!d.events.length) { box.append(el("p", "mute", "Nothing yet. Investigate a transaction in Chat and its decisions will appear here.")); return; }
+    const c = el("div", "card");
+    for (const e of d.events) {
+      const r = el("div", "f"); r.append(el("span", "tag " + e.type, TYPE_LABEL[e.type] || e.type));
+      const b = el("div", "grow"); b.append(el("div", null, e.text));
+      const meta = el("div", "mute", when(e.at) + (e.sid ? " · user " + e.sid.slice(2, 6) : ""));
+      if (e.paymentTxHash) { meta.append(document.createTextNode(" · ")); meta.append(link("https://celoscan.io/tx/" + e.paymentTxHash, "payment on Celoscan")); }
+      b.append(meta); r.append(b); c.append(r);
+    }
+    box.append(c);
+  } catch { box.replaceChildren(el("p", "mute", "Could not load the activity feed.")); }
+}
+
+// ---- payments (proof page)
+async function renderPayments() {
+  const box = $("pout"); box.replaceChildren(el("p", "mute", "Loading..."));
+  try {
+    const d = await api("/api/payments");
+    box.replaceChildren();
+    const T = d.totals;
+    const tiles = el("div", "tiles");
+    for (const [n, label] of [[T.paidCalls, "paid calls"], [T.spentAtMost + " " + T.currency, "spent, at most"], [T.transactionsInvestigated, "transactions investigated with paid evidence"], [T.walletsChecked || 0, "wallets with paid permission checks"], [T.usersSeen, "different users seen"], [T.reusedWithoutCharge, "answers reused with no new charge"]]) {
+      const t = el("div", "tile"); t.append(el("b", null, String(n))); t.append(el("span", null, label)); tiles.append(t);
+    }
+    box.append(tiles);
+    const s = el("div", "card"); s.append(el("h2", null, "Services used"));
+    s.append(el("p", "mute", d.services.length ? d.services.join(", ") + ". Bought through Buy on Celo mainnet, paid by ChainLens." : "No paid calls yet."));
+    s.append(el("p", "mute", "The amount shown is the per-call limit set in this app. The payment transaction on Celoscan is the record of what was actually paid."));
+    box.append(s);
+    if (d.calls.length) {
+      const c = el("div", "card"); c.append(el("h2", null, "Paid calls"));
+      for (const x of d.calls) {
+        const r = el("div", "f"); r.append(el("span", "tag " + (x.status === "paid-but-failed" ? "failed" : "paid"), x.status === "paid-but-failed" ? "paid, incomplete" : "paid"));
+        const b = el("div", "grow"); b.append(el("div", null, (x.amount || "?") + " " + (x.currency || "") + " for " + (x.checks.length || "several") + " checks on " + shortAddr(x.tx || x.address || "")));
+        const meta = el("div", "mute", when(x.at) + (x.purpose ? " · reason: " + x.purpose : "") + (x.sessionId ? " · user " + x.sessionId.slice(2, 6) : "") + " · ");
+        if (x.tx) { meta.append(link("https://celoscan.io/tx/" + x.tx, "transaction")); meta.append(document.createTextNode(" · ")); }
+        if (x.paymentTxHash) meta.append(link("https://celoscan.io/tx/" + x.paymentTxHash, "payment")); else meta.append(document.createTextNode("no payment hash recorded"));
+        if (x.bought) b.append(el("div", "mute", "Bought: " + x.bought + "."));
+        if (x.contributed && x.contributed.length) { b.append(el("div", "mute", "What it contributed:")); const cl = el("ul", "plain mute"); for (const t of x.contributed) cl.append(el("li", null, t)); b.append(cl); }
+        if (x.returned) b.append(el("div", "mute", x.returned + "."));
+        b.append(meta);
+        const dt = document.createElement("details"); dt.append(el("summary", null, "Details"));
+        const ul = el("ul", "det"); for (const t of [x.provider && "Provider: " + x.provider, x.route && "Route: " + x.route, x.checks.length && "Checks: " + x.checks.join(", "), x.paymentTxHash && "Payment transaction: " + x.paymentTxHash, x.resultDigest && "Result digest (sha-256): " + x.resultDigest, x.investigationId && "Investigation: " + x.investigationId].filter(Boolean)) ul.append(el("li", null, t));
+        dt.append(ul); b.append(dt); r.append(b); c.append(r);
+      }
+      box.append(c);
+    }
+  } catch { box.replaceChildren(el("p", "mute", "Could not load the payments page.")); }
+}
+
+// ---- alerts: free data only, while this page is open. They never start a Deep Investigation.
+const ALERT_KEY = "chainlens.alerts";
+let alertsList = store.get(ALERT_KEY, []);          // [{at,label,address,text,hash,kind,read}]
+let alertEvery = store.get("chainlens.alertEvery", 5);   // minutes; 0 = off
+let pollTimer = null;
+const unreadCount = () => alertsList.filter((a) => !a.read).length;
+function updateBadge() { const n = unreadCount(), b = $("alertBadge"); b.textContent = n; b.hidden = n === 0; document.title = (n ? "(" + n + ") " : "") + "Onchain Assistant"; }
+function markAlertsRead() { setTimeout(() => { alertsList.forEach((a) => (a.read = true)); store.set(ALERT_KEY, alertsList); updateBadge(); }, 4000); }
+function markAllReadNow() { alertsList.forEach((a) => (a.read = true)); store.set(ALERT_KEY, alertsList); updateBadge(); renderAlerts(); }
+function notify(title, body) { try { if ("Notification" in window && Notification.permission === "granted") { const n = new Notification(title, { body }); n.onclick = () => { try { window.focus(); show("wallets"); n.close(); } catch {} }; } } catch {} }
+function pushAlert(w, text, hash, kind) {
+  alertsList.unshift({ at: new Date().toISOString(), label: w.label || shortAddr(w.address), address: w.address, text, hash: hash || null, kind, read: false });
+  alertsList = alertsList.slice(0, 50); store.set(ALERT_KEY, alertsList); updateBadge(); renderAlerts();
+  notify((w.label || shortAddr(w.address)) + ": Onchain Assistant", text);
+}
+async function pollWallet(w) {
+  if (w.alerts === false) return;
+  const d = await api("/api/wallet?address=" + encodeURIComponent(w.address));
+  if (!d.ok) return;
+  const items = d.items.filter((i) => i.hash);
+  const first = !w.alertSeen;                       // the first look only records a starting point, so there is no flood
+  const seen = new Set(w.alertSeen || []), before = w.alertStatus || {}, sigSeen = new Set(w.sigSeen || []);
+  if (!first) {
+    for (const it of items.slice().reverse()) {
+      const what = it.summary.replace(/^(Failed|Pending): /, "");
+      if (!seen.has(it.hash)) pushAlert(w, it.status === "failed" ? "A transaction failed: " + what : it.status === "pending" ? "A transaction is pending: " + what : "New activity: " + what, it.hash, it.status);
+      else if (before[it.hash] === "pending" && it.status !== "pending") pushAlert(w, "A pending transaction is now " + it.status + ": " + what, it.hash, it.status);
+    }
+    for (const sg of (d.intel && d.intel.signals) || []) { if (!sigSeen.has(sg.key + "|" + sg.text)) pushAlert(w, "Worth a look: " + sg.text, sg.suggest && sg.suggest.hash, "signal"); }
+  }
+  w.alertSeen = [...new Set([...items.map((i) => i.hash), ...seen])].slice(0, 80);
+  w.alertStatus = Object.fromEntries(items.map((i) => [i.hash, i.status]));
+  w.sigSeen = [...new Set([...(((d.intel && d.intel.signals) || []).map((sg) => sg.key + "|" + sg.text)), ...sigSeen])].slice(0, 80);
+  store.set("chainlens.watch", watch);
+}
+async function pollNow() { for (const w of watch.slice()) { try { await pollWallet(w); } catch {} } }
+function restartPolling() { clearInterval(pollTimer); pollTimer = null; if (!alertEvery) return; pollNow(); pollTimer = setInterval(pollNow, alertEvery * 60000); }
+
+function renderAlerts() {
+  const box = $("alertsBox"); box.replaceChildren();
+  const c = el("div", "card"); c.style.marginTop = "0";
+  const head = el("div", "row"); head.append(el("h2", "grow", "Alerts"));
+  const sel = document.createElement("select"); sel.style.width = "auto"; sel.style.flex = "0 0 auto";
+  for (const [v, t] of [[0, "Alerts off"], [2, "Check every 2 min"], [5, "Check every 5 min"], [10, "Check every 10 min"]]) { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.append(o); }
+  sel.value = String(alertEvery); sel.onchange = () => { alertEvery = Number(sel.value); store.set("chainlens.alertEvery", alertEvery); restartPolling(); };
+  head.append(sel); c.append(head);
+  c.append(el("p", "mute", "Alerts check your watched wallets with free data while this page is open, and tell you about new activity, failures, pending transactions and anything worth a look. They never start a Deep Investigation. You choose."));
+  if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+    const nb = el("button", "small ghost", "Turn on pop-up notifications"); nb.onclick = async () => { try { await Notification.requestPermission(); } catch {} renderAlerts(); }; c.append(nb);
+  } else if ("Notification" in window && Notification.permission === "denied") c.append(el("p", "mute", "Pop-up notifications are blocked in this browser. Alerts still appear here and in the tab title."));
+  if (!alertsList.length) c.append(el("p", "mute", watch.length ? "No alerts yet. The first check only records where each wallet stands now." : "Add a wallet below to start."));
+  for (const a of alertsList.slice(0, 10)) {
+    const r = el("div", "f"); r.append(el("span", "tag " + (a.kind === "signal" ? "noted" : a.kind === "failed" ? "failed" : a.kind === "pending" ? "pending" : a.read ? "unknown" : "success"), a.kind === "signal" ? "noted" : a.kind === "failed" ? "failed" : a.kind === "pending" ? "pending" : (a.read ? "earlier" : "new")));
+    const b = el("div", "grow"); b.append(el("div", a.read ? null : "unread", a.text)); b.append(el("div", "mute", a.label + " · " + when(a.at)));
+    if (a.hash) { const eb = el("button", "small ghost", "Explain"); eb.onclick = () => { a.read = true; store.set(ALERT_KEY, alertsList); updateBadge(); investigate(a.hash); }; b.append(eb); }
+    r.append(b); c.append(r);
+  }
+  if (unreadCount()) { const mb = el("button", "small ghost", "Mark all read (" + unreadCount() + ")"); mb.style.marginTop = "6px"; mb.style.marginRight = "6px"; mb.onclick = markAllReadNow; c.append(mb); }
+  if (alertsList.length) { const cb = el("button", "small ghost", "Clear alerts"); cb.style.marginTop = "6px"; cb.onclick = () => { alertsList = []; store.set(ALERT_KEY, alertsList); updateBadge(); renderAlerts(); }; c.append(cb); }
+  box.append(c);
+}
+renderAlerts(); updateBadge(); restartPolling();
 </script>
 </body>
 </html>
