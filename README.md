@@ -4,7 +4,7 @@ Live site: **https://telegraph-evaluator.vercel.app** (try every source there). 
 
 | What the rules prioritise | Our evidence |
 |---|---|
-| **Enabling the most distinct commercial missions** | Truth sources on 10 Intents that together appear in **all 15 of 15** missions: FX_NOW_EUR, FX_NOW_CAD, FX_NOW_SEK, MACRO_ECONOMIC_INDICATOR, LIQUIDITY_DEPTH_VERIFY_GENERAL, CORPORATE_REGISTRY_LOOKUP_GENERAL, WEATHER_FORECAST_VERIFY_GENERAL, VULNERABILITY_TRIAGE_GENERAL, CVE_LOOKUP_CVSS, TRAVEL_DISRUPTION_GENERAL |
+| **Enabling the most distinct commercial missions** | Truth sources on 11 Intents that together appear in **all 15 of 15** missions: B2B_IDENTITY_ENRICHMENT_GENERAL, FX_NOW_EUR, FX_NOW_CAD, FX_NOW_SEK, MACRO_ECONOMIC_INDICATOR, LIQUIDITY_DEPTH_VERIFY_GENERAL, CORPORATE_REGISTRY_LOOKUP_GENERAL, WEATHER_FORECAST_VERIFY_GENERAL, VULNERABILITY_TRIAGE_GENERAL, CVE_LOOKUP_CVSS, TRAVEL_DISRUPTION_GENERAL |
 | **Meeting missing mission-critical Intent needs** | TRAVEL_DISRUPTION_GENERAL (mission 15) had 2 of the 3 contributors it needs to count; ours completed it on 21 Nov 2026 |
 | **Proven measurement improvement** | Caught a miner answering EUR/USD inverted (0.91 instead of 1.097) and the #1-ranked miner answering "rate 1.0" ([FX evidence](EVIDENCE-fx-ranking.md)). Each new checker fixes a known weakness of the plain source: CVE takes NIST's own score on purpose, not whichever is listed first; weather resolves place names ("Lagos" vs "Lagos, Portugal") and covers any day back to 1940; travel ignores closures that don't affect airline flights (for example "closed to transient general aviation") |
 | **Independently checked** | Tested by other builders: Fexx (OathCast) and Chrome (PREFLIGHT); one bug found and fixed the same day ([testers](TESTERS.md)) |
@@ -23,9 +23,10 @@ Public posts on X: [first post](https://x.com/kingChrys494/status/21226699888761
 Free, no-key public truth sources that give Telegraph a trusted reference answer for mission-critical Intents, so the network can tell a Provider that answers correctly from one that does not. Each source comes with an independent baseline check and tested failure cases.
 
 ## Results at a glance
-- **9 truth sources** (6 Intents) uploaded first, covering **10 of the 15 H2 missions**, all **Eligible**. The three live checkers added on 20 to 21 Nov (below) add 4 more Intents and bring the total to **10 Intents covering all 15 of 15 missions**. Screenshots: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png), [FX](anjoman-fx.png), [company registry](anjoman-corp.png).
+- **9 truth sources** (6 Intents) uploaded first, covering **10 of the 15 H2 missions**, all **Eligible**. The three live checkers added on 20 to 21 Nov (below) add 4 more Intents and bring the total to **10 Intents covering all 15 of 15 missions**; the B2B identity checker added on 25 Nov makes 11. Screenshots: [liquidity](anjoman-liquidity.png), [macro](anjoman-macro.png), [FX](anjoman-fx.png), [company registry](anjoman-corp.png).
 - **Accuracy against an independent second source:** 20 pools on 5 chains, all within 2% ([EVIDENCE.md](EVIDENCE.md)); inflation, unemployment and GDP growth for 102 to 189 countries, median gap 0.04 to 0.13 points ([EVIDENCE-macro.md](EVIDENCE-macro.md)); 29 currencies, median gap 0.15% ([EVIDENCE-fx.md](EVIDENCE-fx.md)).
 - **Company registry, measured and improved (18 Nov):** the first name search found the right company for 15 of 20 full legal names and 1 wrong one. A tested change to GLEIF's all-names search raised that to **18 of 20 with no wrong company**, and fixed Japanese and Korean names ([EVIDENCE-corp.md](EVIDENCE-corp.md)).
+- **Preference pairs for B2B identity enrichment (24 Nov):** 4 pairs submitted for `B2B_IDENTITY_ENRICHMENT_GENERAL`, all **Eligible** on Anjoman. Each pair has a prompt, a better answer and a worse one. The better answers state only what a public source supports (for example, an employee count is given as a range when sources disagree, and a reserved `.example` domain returns "no company can be identified"). The worse answers invent exact figures, registration numbers or a CEO. These are pairs, not a live truth source, and we wrote them ourselves. Three were uploaded as a file ([b2b-pairs.jsonl](b2b-pairs.jsonl)) and one was added by hand in the form.
 - **Live tests through Telegraph:** liquidity on 5 chains, every delivered answer within 1% and 1 missing answer caught (traced to routing); FX, a correct 1.10 answer replaced by Telegraph with 1.00; company registry, "Siemens" resolved to the right company.
 - **Day-2 live checks (19 Nov):** USD/CAD 1.4305 and USD/SEK 10.1596 delivered correctly; a USD/EUR answer stated "1 EUR is worth 0.91125 USD" although the miner had returned 1 EUR = 1.097391 USD ([EVIDENCE-fx-ranking.md](EVIDENCE-fx-ranking.md#6-day-2-live-checks-19-nov-2026)).
 - **Ranking check (18 to 19 Nov):** Telegraph's #1-ranked `FX_NOW_EUR` miner answered a live request with a rate of 1.0 (euros per euro), wrong in either direction; two miners storing the same value were scored 1.000 and 0.710; ranks swung between epochs; and the Intent does not say whether the rate is USD/EUR or EUR/USD, so one-direction scoring cannot be fair to both ([EVIDENCE-fx-ranking.md](EVIDENCE-fx-ranking.md)).
@@ -98,15 +99,16 @@ Tutorial: [How to add a truth source to Telegraph in 15 minutes](TUTORIAL.md).
 - A Provider whose answer comes from the same site as a truth source will match it exactly (seen with PREFLIGHT and GeckoTerminal), which is why every Intent here has two independent sources.
 - Baselines are one run each; the live tests cover one Provider, because routing sent every request to the same one.
 
-## Live truth-source checkers (added 21 Nov 2026)
+## Live truth-source checkers (added 21 to 25 Nov 2026)
 
-Three truth sources run as small public endpoints on this repo's site, **[telegraph-evaluator.vercel.app](https://telegraph-evaluator.vercel.app)**, where anyone can try them:
+Four truth sources run as small public endpoints on this repo's site, **[telegraph-evaluator.vercel.app](https://telegraph-evaluator.vercel.app)**, where anyone can try them:
 
 | Checker | Intents | Reference | Code |
 |---|---|---|---|
 | CVE severity score | `CVE_LOOKUP_CVSS`, `VULNERABILITY_TRIAGE_GENERAL` | NIST National Vulnerability Database (NIST's own score first), CVE.org as fallback | [api/truth/cve.js](api/truth/cve.js) |
 | Observed weather on a past day | `WEATHER_FORECAST_VERIFY_GENERAL` | Open-Meteo, with its own place search; any day back to 1940 | [api/truth/weather.js](api/truth/weather.js) |
 | Disruption at a US airport right now | `TRAVEL_DISRUPTION_GENERAL` | FAA National Airspace System status feed (nasstatus.faa.gov). Scope: US airports, airport-level disruption, not individual flight numbers | [api/truth/travel.js](api/truth/travel.js) |
+| Who is behind a company domain (added 25 Nov) | `B2B_IDENTITY_ENRICHMENT_GENERAL` | DNS (does the domain exist; reserved `.example`-type domains are never a business), Wikidata (the company whose official website is this domain: HQ, employees with their date, industry, current CEO, LEI), then GLEIF with that LEI (legal name, registration number and authority, addresses). Scope: companies on Wikidata with this website; tax ID is always `not_verifiable`; employee figures that disagree for the same year come back as a range | [api/truth/b2b.js](api/truth/b2b.js) |
 
 Every answer says where it came from (which organisation scored the CVE, or which place, coordinates and data set were used). Unknown, unscored or unfinished cases return an error rather than a guess. Tests: `npm test`.
 
