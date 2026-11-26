@@ -95,6 +95,28 @@
   .out summary { cursor:pointer; color:var(--muted); font-size:.85rem; }
   .out pre { margin:8px 0 0; white-space:pre-wrap; word-break:break-word; font:400 .76rem/1.5 'Geist Mono',monospace; color:var(--muted); }
 
+
+  /* delivery check */
+  .dc { margin-top:22px; }
+  .dc .ex { margin:14px 0 14px; }
+  .dc .chip { font-size:.92rem; padding:8px 14px; }
+  .dc .chip[aria-pressed="true"] { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); }
+  .dc .out { min-height:0; }
+  .dc table { width:100%; border-collapse:collapse; margin-top:12px; font-size:.86rem; }
+  .dc th, .dc td { text-align:left; padding:7px 8px; border-top:1px solid var(--line); vertical-align:top; overflow-wrap:anywhere; }
+  .dc th { color:var(--muted); font-weight:500; }
+  .dc .r-match { color:var(--ok); font-weight:600; } .dc .r-mismatch { color:var(--bad); font-weight:600; } .dc .r-missing { color:var(--warn); font-weight:600; }
+  .dc .acp { margin-top:10px; }
+  .dc .tblwrap { overflow-x:auto; }
+  @media (max-width:640px){
+    .dc table, .dc tbody, .dc tr, .dc td { display:block; }
+    .dc thead { display:none; }
+    .dc tr { border-top:1px solid var(--line); padding:8px 0; }
+    .dc td { border:0; padding:2px 0; overflow-wrap:break-word; }
+    .dc td:first-child { font-weight:600; }
+    .dc td[data-l]::before { content:attr(data-l) ": "; color:var(--muted); font-weight:400; }
+  }
+
   /* source cards */
   .src { display:grid; gap:14px; grid-template-columns:1fr; margin-top:22px; }
   @media (min-width:760px){ .src { grid-template-columns:1fr 1fr; } }
@@ -137,6 +159,7 @@
     <a class="brand" href="#top"><span class="logo">E</span><b>Telegraph <span class="long">Evaluator</span></b></a>
     <nav class="nav" aria-label="Page">
       <a class="opt" href="#checkers">Live checkers</a>
+      <a class="opt" href="#delivery">Delivery check</a>
       <a class="opt" href="#sources">All sources</a>
       <button class="theme" id="theme" type="button" aria-label="Switch between dark and light mode"><span id="themeIcon">☀</span><span id="themeText">Light</span></button>
     </nav>
@@ -203,6 +226,21 @@
         <div class="ex"><button type="button" class="chip" data-for="tr" data-v="SFO">SFO</button><button type="button" class="chip" data-for="tr" data-v="JFK-ATL">JFK-ATL</button><button type="button" class="chip" data-for="tr" data-v="DL404 at ATL">DL404 at ATL</button></div>
         <div class="out" id="tr-out"><span class="muted">Try an airport (SFO), a route (JFK-ATL) or a flight with its airport (DL404 at ATL).</span></div>
       </section>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="delivery">
+  <div class="wrap">
+    <h2>Check a delivery before you pay.</h2>
+    <p class="muted">Commercial use case 8, Independent Agent Commerce Evaluation. An agent bought a report on Siemens. Pick one and see whether the evaluator releases the payment.</p>
+    <div class="dc">
+      <div class="ex" role="group" aria-label="Choose a report">
+        <button type="button" class="chip" data-s="correct" aria-pressed="false">Correct report</button>
+        <button type="button" class="chip" data-s="incorrect" aria-pressed="false">Wrong facts</button>
+        <button type="button" class="chip" data-s="incomplete" aria-pressed="false">Missing fields</button>
+      </div>
+      <div class="out" id="dc-out" aria-live="polite"><span class="muted">Checked against the public GLEIF register. A sandbox evaluator, not registered on Virtuals.</span></div>
     </div>
   </div>
 </section>
@@ -346,9 +384,32 @@
       e.submitter || e.target.querySelector('button'));
   });
 
+
+  /* delivery check */
+  const dcOut = document.getElementById('dc-out');
+  const dcNames = { accept:'Accepted', reject_incorrect:'Rejected: wrong facts', reject_incomplete:'Rejected: incomplete', not_assessed:'Not assessed' };
+  const dcLabel = f => f === 'lei' ? 'LEI' : String(f).replace(/_/g, ' ');
+  document.querySelectorAll('.dc .chip').forEach(c => c.addEventListener('click', async () => {
+    document.querySelectorAll('.dc .chip').forEach(x => x.setAttribute('aria-pressed', x === c ? 'true' : 'false'));
+    dcOut.innerHTML = '<span class="muted">Checking against the register…</span>';
+    try {
+      const r = await fetch(API + '/api/delivery-check?sample=' + c.dataset.s);
+      const j = await r.json();
+      if (!r.ok) { dcOut.innerHTML = `<span class="err">${esc(j.error || 'No answer')}</span>`; return; }
+      const rows = (j.checks || []).map(k => `<tr><td>${esc(dcLabel(k.field))}</td><td data-l="Report says">${esc(k.claimed ?? 'not in report')}</td><td data-l="Register says">${esc(k.register ?? '')}</td><td data-l="Result" class="r-${esc(k.result)}">${esc(k.result)}</td></tr>`).join('');
+      const pay = j.acp && j.acp.action === 'complete' ? 'Payment released to the provider.' : 'Payment refunded to the buyer.';
+      const short = { accept:'All required fields match the register.', reject_incorrect:'The report contradicts the register.', reject_incomplete:'Required fields are missing from the report.' }[j.verdict] || '';
+      dcOut.innerHTML = `<div class="big ${j.verdict === 'accept' ? 'ok' : 'bad'}">${esc(dcNames[j.verdict] || j.verdict)}</div>`
+        + `<div>${esc(short)} ${esc(pay)}</div>`
+        + `<details><summary>See every field</summary><div class="tblwrap"><table><thead><tr><th>Field</th><th>Report says</th><th>Register says</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+    } catch (e) {
+      dcOut.innerHTML = '<span class="err">Could not reach the checker. Try again.</span>';
+    }
+  }));
+
   /* example chips fill the input and run it */
   const target = { cve: 'cve-id', wx: 'wx-place', tr: 'tr-q' };
-  document.querySelectorAll('.ex .chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('.ex .chip[data-for]').forEach(c => c.addEventListener('click', () => {
     document.getElementById(target[c.dataset.for]).value = c.dataset.v;
     document.getElementById(c.dataset.for + '-form').requestSubmit();
   }));
