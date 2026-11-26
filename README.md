@@ -90,6 +90,24 @@ Tutorial: [How to add a truth source to Telegraph in 15 minutes](TUTORIAL.md).
 - Coordination thread: [bounties issue #202, Web3 Native & DeFi](https://github.com/telegraphprotocol/bounties/issues/202) (claimed 15 Nov 2026).
 - Eligibility: the entrant is in Nigeria; the organizers confirmed Nigeria is eligible and no KYC is required.
 
+## Delivery check: did the agent do the job it was paid for? (commercial use case #8, added 26 Nov 2026)
+
+An independent evaluator for agent commerce. A buyer orders a company due diligence report from an agent; before the agent is paid, the evaluator checks the report against the public register (GLEIF) and returns the same decision an ACP evaluator makes: **complete** (pay the agent) or **reject** (refund the buyer). Answers the `TASK_EXECUTION_QUALITY_GENERAL` Intent (`verdict`, `reason`, `score`).
+
+One order (due diligence on Siemens Aktiengesellschaft: legal name, LEI, registration number, jurisdiction, status, registered address), three reports. Click each; the register is queried live:
+
+| Report | What is in it | Verdict | Open it |
+|---|---|---|---|
+| Correct | All six fields right | **accept**, score 1, ACP *complete* | [/api/delivery-check?sample=correct](https://telegraph-evaluator.vercel.app/api/delivery-check?sample=correct) |
+| Incorrect | Gives the LEI as the registration number (a mistake a real agent made on 18 Nov) and a wrong address | **reject_incorrect**, score 0, ACP *reject*: shows each claim beside the register value | [/api/delivery-check?sample=incorrect](https://telegraph-evaluator.vercel.app/api/delivery-check?sample=incorrect) |
+| Incomplete | Nothing wrong, but 3 of the 6 requested fields are missing | **reject_incomplete**, score 0.5, ACP *reject*: names the missing fields | [/api/delivery-check?sample=incomplete](https://telegraph-evaluator.vercel.app/api/delivery-check?sample=incomplete) |
+
+Check your own: `POST /api/delivery-check` with `{"task": {"company": "...", "required": ["legal_name","lei",...]}, "result": "Legal name: ...\nLEI: ..."}` (the report can be JSON or "Field: value" lines).
+
+How it decides, in order: any claim the register contradicts rejects the job as incorrect; otherwise any missing required field rejects it as incomplete; otherwise it accepts. The company is identified from the **order**, never from the report, so a wrong report cannot choose what it is checked against. If the order is ambiguous (for example just "Siemens", which matches 130 entities) it gives no verdict rather than guessing. Claims the register cannot confirm (revenue, CEO, employees, tax ID) are listed as *not checked*, never counted as right or wrong.
+
+Honest limits: this checks the fields a public register holds. It does not judge a report's analysis or opinions. It runs as a sandbox evaluator with ACP's complete/reject logic; it is not registered as an evaluator address on Virtuals. Tests: [test/delivery-check.test.js](test/delivery-check.test.js).
+
 ## Honest limits
 - All 9 rows are Eligible. Anjoman paid an "Evaluator · material" reward for epoch 13 ($0.0054 test USDC, [screenshot](anjoman-evaluator-reward.png)), which shows the material is in use; how much it moved any ranking is not shown by Anjoman.
 - "Eligible" means Anjoman accepted a source as well-formed and reachable. It does not measure accuracy; the evidence pages do.
