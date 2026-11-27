@@ -1,0 +1,46 @@
+version: '1'
+kind: miner
+id: 0
+slug: truth-delivery-check-gleif-evaluator
+name: Agent delivery check for company reports (GLEIF)
+description: 'Public, no-key https endpoint that judges whether an agent''s delivered company report meets the order it was given. The order (task) names the company, by legal name or LEI, and the fields required. The delivered report (result) may be JSON or text with "Field: value" lines. The company is always taken from the order, never from the report, so a wrong report cannot choose what it is checked against. Each claim (legal name, LEI, registration number, jurisdiction, status, registered address) is compared field by field with the company''s public GLEIF record. Any contradiction gives reject_incorrect (score 0); otherwise any missing or unreadable required field gives reject_incomplete (score 0.5); otherwise accept (score 1). If the order''s company cannot be identified in GLEIF the verdict is not_assessed with no score. Claims GLEIF cannot confirm, such as revenue, are listed as not checked and never guessed. Every answer includes each field check, the register value, the GLEIF source link and the matching ACP action (complete or reject). Source code and tests are at github.com/investor567768/telegraph-evaluator (api/delivery-check.js).'
+base_url: https://telegraph-evaluator.vercel.app
+auth:
+  type: none
+endpoints:
+- path: /delivery-check
+  external_path: /api/delivery-check
+  method: GET
+  description: 'One order and one delivered report in, a verdict out. Fields verdict (accept, reject_incorrect, reject_incomplete or not_assessed), score (1, 0.5, 0 or null), reason, acp (action and reason), order, checks (one per field with result, claim, register value and why), not_checked, sources, checked_at, method.'
+  intents:
+  - TASK_EXECUTION_QUALITY_GENERAL
+  params:
+    query:
+      required:
+      - name: task
+        type: string
+        intents: ['*']
+        description: 'The order the agent was given. JSON such as {"company":"Siemens Aktiengesellschaft","required":["legal_name","lei","registration_number"]} or {"lei":"W38RGI023J3WT1HWRP32","required":[...]}, or plain text naming the company and the fields wanted.'
+      - name: result
+        type: string
+        intents: ['*']
+        description: 'The report the agent delivered, as JSON or as text with "Field: value" lines.'
+intent_mapping:
+  TASK_EXECUTION_QUALITY_GENERAL:
+    endpoint: /delivery-check
+    input:
+      task:
+        from: task
+        how: "The task or order the agent was given: the company (legal name or LEI) and the fields it had to deliver. Pass it as JSON with company or lei and required if the query allows, otherwise as the order's text."
+      result:
+        from: result
+        how: "The agent's actual output, the delivered company report, exactly as given in the query."
+    output:
+      verdict: { path: verdict }
+      score: { path: score }
+      reason: { path: reason }
+      acp_action: { path: acp.action }
+      checks: { path: checks }
+semantics:
+  supported_intents:
+  - TASK_EXECUTION_QUALITY_GENERAL

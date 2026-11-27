@@ -108,6 +108,17 @@
   .dc .r-match { color:var(--ok); font-weight:600; } .dc .r-mismatch { color:var(--bad); font-weight:600; } .dc .r-missing { color:var(--warn); font-weight:600; }
   .dc .acp { margin-top:10px; }
   .dc .tblwrap { overflow-x:auto; }
+  .dcf { display:grid; gap:8px; margin:0 0 14px; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  .dcf > label { font-size:.86rem; color:var(--muted); margin-top:4px; }
+  .dcf fieldset { border:0; padding:0; margin:4px 0 0; display:flex; flex-wrap:wrap; gap:6px 16px; }
+  .dcf legend { font-size:.86rem; color:var(--muted); padding:0; margin-bottom:6px; }
+  .dcf fieldset label { font-size:.92rem; display:flex; align-items:center; gap:6px; }
+  .dcf fieldset input { flex:none; width:auto; accent-color:var(--accent); }
+  .dcf textarea { background:var(--bg); color:var(--text); border:1px solid var(--line-2); border-radius:12px; padding:12px 13px; font:400 .95rem/1.5 'Geist Mono',monospace; resize:vertical; }
+  .dcf-act { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:6px; }
+  .linkish { background:none; border:0; padding:0; color:var(--muted); text-decoration:underline; font:500 .9rem 'Geist',sans-serif; cursor:pointer; }
+  .linkish:hover { color:var(--text); }
+  .dcf input:focus-visible, .dcf textarea:focus-visible, .linkish:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   @media (max-width:640px){
     .dc table, .dc tbody, .dc tr, .dc td { display:block; }
     .dc thead { display:none; }
@@ -178,7 +189,7 @@
     </div>
     <div class="strip">
       <div><strong>15 of 15</strong><span>missions covered</span></div>
-      <div><strong>11</strong><span>Intents with a truth source</span></div>
+      <div><strong>13</strong><span>Intents with a truth source</span></div>
       <div><strong>All accepted</strong><span>by evaluator pools</span></div>
       <div><strong>No key</strong><span>needed for any source</span></div>
     </div>
@@ -233,13 +244,29 @@
 <section class="block" id="delivery">
   <div class="wrap">
     <h2>Check a delivery before you pay.</h2>
-    <p class="muted">Commercial use case 8, Independent Agent Commerce Evaluation. An agent bought a report on Siemens. Pick one and see whether the evaluator releases the payment.</p>
+    <p class="muted">Commercial use case 8, Independent Agent Commerce Evaluation. An agent bought a report on Siemens. Pick one and see whether the evaluator releases the payment, or check a report of your own.</p>
     <div class="dc">
       <div class="ex" role="group" aria-label="Choose a report">
         <button type="button" class="chip" data-s="correct" aria-pressed="false">Correct report</button>
         <button type="button" class="chip" data-s="incorrect" aria-pressed="false">Wrong facts</button>
         <button type="button" class="chip" data-s="incomplete" aria-pressed="false">Missing fields</button>
+        <button type="button" class="chip" data-own aria-pressed="false" aria-controls="dc-form">Check your own</button>
       </div>
+      <form class="dcf" id="dc-form" hidden>
+        <label for="dc-co">Company the order is about</label>
+        <input id="dc-co" placeholder="Legal name or LEI, for example Apple Inc." autocomplete="off">
+        <fieldset><legend>Fields the order requires</legend>
+          <label><input type="checkbox" value="legal_name" checked> Legal name</label>
+          <label><input type="checkbox" value="lei" checked> LEI</label>
+          <label><input type="checkbox" value="registration_number"> Registration number</label>
+          <label><input type="checkbox" value="jurisdiction" checked> Jurisdiction</label>
+          <label><input type="checkbox" value="status"> Status</label>
+          <label><input type="checkbox" value="registered_address"> Registered address</label>
+        </fieldset>
+        <label for="dc-rep">Report the agent delivered</label>
+        <textarea id="dc-rep" rows="5" placeholder="One field per line, for example&#10;Legal name: Apple Inc.&#10;LEI: HWUPKR0MPOU8FGXBT394&#10;Jurisdiction: United States"></textarea>
+        <div class="dcf-act"><button type="submit" class="btn primary">Check delivery</button><button type="button" class="linkish" id="dc-eg">Fill with the Apple example</button></div>
+      </form>
       <div class="out" id="dc-out" aria-live="polite"><span class="muted">Checked against the public GLEIF register. A sandbox evaluator, not registered on Virtuals.</span></div>
     </div>
   </div>
@@ -248,7 +275,7 @@
 <section class="block" id="sources">
   <div class="wrap">
     <h2>All my truth sources.</h2>
-    <p class="muted">Eight sources on 11 Intents, covering all 15 hackathon missions. Each is public, needs no key, and returns an error when it cannot answer.</p>
+    <p class="muted">Ten sources on 13 Intents, covering all 15 hackathon missions. Each is public, needs no key, and returns an error when it cannot answer.</p>
     <div class="src">
       <article class="s"><h3>CVE severity scores</h3><p class="ref">NIST National Vulnerability Database, with CVE.org as fallback.</p><div class="intents"><span class="tag">CVE_LOOKUP_CVSS</span><span class="tag">VULNERABILITY_TRIAGE_GENERAL</span></div><a class="try" href="#cve-form">Try it above <i>&darr;</i></a></article>
       <article class="s"><h3>Observed weather on a past day</h3><p class="ref">Open-Meteo, the reference Telegraph names for this Intent.</p><div class="intents"><span class="tag">WEATHER_FORECAST_VERIFY_GENERAL</span></div><a class="try" href="#wx-form">Try it above <i>&darr;</i></a></article>
@@ -258,6 +285,8 @@
       <article class="s"><h3>Exchange rates</h3><p class="ref">European Central Bank reference rates.</p><div class="intents"><span class="tag">FX_NOW_EUR</span><span class="tag">FX_NOW_CAD</span><span class="tag">FX_NOW_SEK</span></div><a class="try" href="https://api.frankfurter.dev/v1/latest?from=EUR&amp;to=USD" target="_blank" rel="noopener">EUR to USD now <i>&#8599;</i></a></article>
       <article class="s"><h3>Macro indicators (GDP growth and similar)</h3><p class="ref">IMF and World Bank.</p><div class="intents"><span class="tag">MACRO_ECONOMIC_INDICATOR</span></div><a class="try" href="https://api.worldbank.org/v2/country/NG/indicator/SL.UEM.TOTL.ZS?format=json&amp;mrv=3" target="_blank" rel="noopener">Nigeria unemployment <i>&#8599;</i></a></article>
       <article class="s"><h3>DeFi pool liquidity</h3><p class="ref">DexScreener and GeckoTerminal, read at the same moment.</p><div class="intents"><span class="tag">LIQUIDITY_DEPTH_VERIFY_GENERAL</span></div><a class="try" href="seller-check.html">Seller check tool <i>&#8599;</i></a></article>
+      <article class="s"><h3>Ship arrivals at Finnish ports</h3><p class="ref">Fintraffic Digitraffic port calls: planned and actual arrival and departure times for every ship call.</p><div class="intents"><span class="tag">SHIPMENT_DELAY_RISK_GENERAL</span></div><a class="try" href="https://github.com/investor567768/telegraph-evaluator/blob/main/digitraffic-truth-source.yaml" target="_blank" rel="noopener">See the source <i>&#8599;</i></a></article>
+      <article class="s"><h3>Agent delivery check</h3><p class="ref">Judges an agent's delivered company report against the order, field by field, using GLEIF.</p><div class="intents"><span class="tag">TASK_EXECUTION_QUALITY_GENERAL</span></div><a class="try" href="#delivery">Try it above <i>&uarr;</i></a></article>
     </div>
   </div>
 </section>
@@ -389,13 +418,16 @@
   const dcOut = document.getElementById('dc-out');
   const dcNames = { accept:'Accepted', reject_incorrect:'Rejected: wrong facts', reject_incomplete:'Rejected: incomplete', not_assessed:'Not assessed' };
   const dcLabel = f => f === 'lei' ? 'LEI' : String(f).replace(/_/g, ' ');
-  document.querySelectorAll('.dc .chip').forEach(c => c.addEventListener('click', async () => {
-    document.querySelectorAll('.dc .chip').forEach(x => x.setAttribute('aria-pressed', x === c ? 'true' : 'false'));
+  const dcChips = document.querySelectorAll('.dc .chip');
+  const dcForm = document.getElementById('dc-form');
+  const dcPress = c => dcChips.forEach(x => x.setAttribute('aria-pressed', x === c ? 'true' : 'false'));
+  async function dcRun(url) {
     dcOut.innerHTML = '<span class="muted">Checking against the register…</span>';
     try {
-      const r = await fetch(API + '/api/delivery-check?sample=' + c.dataset.s);
+      const r = await fetch(url);
       const j = await r.json();
       if (!r.ok) { dcOut.innerHTML = `<span class="err">${esc(j.error || 'No answer')}</span>`; return; }
+      if (j.verdict === 'not_assessed') { dcOut.innerHTML = `<div class="big bad">Not assessed</div><div>${esc(j.reason)} Payment held.</div>`; return; }
       const rows = (j.checks || []).map(k => `<tr><td>${esc(dcLabel(k.field))}</td><td data-l="Report says">${esc(k.claimed ?? 'not in report')}</td><td data-l="Register says">${esc(k.register ?? '')}</td><td data-l="Result" class="r-${esc(k.result)}">${esc(k.result)}</td></tr>`).join('');
       const pay = j.acp && j.acp.action === 'complete' ? 'Payment released to the provider.' : 'Payment refunded to the buyer.';
       const short = { accept:'All required fields match the register.', reject_incorrect:'The report contradicts the register.', reject_incomplete:'Required fields are missing from the report.' }[j.verdict] || '';
@@ -405,7 +437,31 @@
     } catch (e) {
       dcOut.innerHTML = '<span class="err">Could not reach the checker. Try again.</span>';
     }
+  }
+  document.querySelectorAll('.dc .chip[data-s]').forEach(c => c.addEventListener('click', () => {
+    dcPress(c); dcForm.hidden = true;
+    dcRun(API + '/api/delivery-check?sample=' + c.dataset.s);
   }));
+  document.querySelector('.dc .chip[data-own]').addEventListener('click', e => {
+    dcPress(e.currentTarget); dcForm.hidden = false;
+    dcOut.innerHTML = '<span class="muted">Name the company, tick what the order asked for, paste the report, then check it.</span>';
+    document.getElementById('dc-co').focus();
+  });
+  document.getElementById('dc-eg').addEventListener('click', () => {
+    document.getElementById('dc-co').value = 'HWUPKR0MPOU8FGXBT394';
+    document.getElementById('dc-rep').value = 'Legal name: Apple Inc.\nLEI: HWUPKR0MPOU8FGXBT394\nJurisdiction: United States';
+    dcForm.querySelectorAll('fieldset input').forEach(b => b.checked = ['legal_name','lei','jurisdiction'].includes(b.value));
+  });
+  dcForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const co = document.getElementById('dc-co').value.trim();
+    const rep = document.getElementById('dc-rep').value.trim();
+    const required = [...dcForm.querySelectorAll('fieldset input:checked')].map(b => b.value);
+    if (!co || !rep) { dcOut.innerHTML = '<span class="err">Add the company and the report first.</span>'; return; }
+    if (!required.length) { dcOut.innerHTML = '<span class="err">Tick at least one field the order requires.</span>'; return; }
+    const task = /^[A-Z0-9]{20}$/i.test(co) ? { lei: co.toUpperCase(), required } : { company: co, required };
+    dcRun(API + '/api/delivery-check?task=' + encodeURIComponent(JSON.stringify(task)) + '&result=' + encodeURIComponent(rep));
+  });
 
   /* example chips fill the input and run it */
   const target = { cve: 'cve-id', wx: 'wx-place', tr: 'tr-q' };

@@ -1,0 +1,9 @@
+version: '1'
+kind: miner
+id: 0
+slug: digitraffic-port-calls
+name: Digitraffic Finnish port calls (planned vs actual arrival)
+base_url: https://meri.digitraffic.fi
+auth: { type: none }
+endpoints:
+  - { path: /port-calls, external_path: /api/port-call/v1/port-calls, method: GET, intents: [SHIPMENT_DELAY_RISK_GENERAL] }
