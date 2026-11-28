@@ -47,6 +47,15 @@ test('a fabricated CEO the register cannot confirm holds payment instead of rele
   assert.deepEqual(a.checks.filter(c => c.required).map(c => c.result), Array(6).fill('match'));
 });
 
+test('keys written as tax_id, taxId or employee_count are caught too', async () => {
+  byName();
+  for (const key of ['tax_id', 'taxId', 'employee_count']) {
+    const a = await answer({ task: ORDER, result: read('report-correct.txt') + `${key}: US12345\n` });
+    assert.equal(a.verdict, 'hold_unchecked', key);
+    assert.equal(a.acp.action, 'hold', key);
+  }
+});
+
 test('a plain note that states no fact does not block payment', async () => {
   byName();
   const a = await answer({ task: ORDER, result: read('report-correct.txt') + 'Summary: Large German industrial group.\n' });

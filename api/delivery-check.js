@@ -252,7 +252,7 @@ async function answer(params) {
     reason = `All ${matched} required fields are present and match the GLEIF register for ${reg.legal_name} (LEI ${reg.lei}).`;
   }
   const unchecked = Object.keys(extra);
-  const unverified = unchecked.filter(k => FACT_KEY.test(k));
+  const unverified = unchecked.filter(k => FACT_KEY.test(k.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]/g, ' ')));
   if (verdict === 'accept' && unverified.length) {
     verdict = 'hold_unchecked';
     reason = `All ${matched} required fields are present and match the GLEIF register for ${reg.legal_name} (LEI ${reg.lei}), but the report also states ${unverified.join(', ')}, which the register cannot confirm. Payment is held until those claims are confirmed another way.`;
