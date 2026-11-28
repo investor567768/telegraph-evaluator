@@ -235,9 +235,9 @@
     <h2>How it works.</h2>
     <p class="muted">An evaluator decides whether a miner's answer was right. To do that fairly it needs something trusted to compare against. That is what I build.</p>
     <div class="how">
-      <div><b>1. A question is asked</b><span>A buyer or an agent asks a Telegraph miner something with a checkable answer, such as a CVE score or yesterday's weather.</span></div>
-      <div><b>2. The truth source answers</b><span>My server looks the answer up in a public, trusted register, with no key needed, and says where it came from. If it cannot find one, it returns an error, not a guess.</span></div>
-      <div><b>3. The answers are compared</b><span>The miner's answer is compared with the reference, so the miner is scored on facts, not on who sounded sure.</span></div>
+      <div><b>1. A question is asked</b><span>A buyer or agent asks a Telegraph miner something with a checkable answer, like a CVE score.</span></div>
+      <div><b>2. The truth source answers</b><span>My server looks it up in a public register, no key needed, and names the source. No match returns an error, not a guess.</span></div>
+      <div><b>3. The answers are compared</b><span>The miner's answer is compared with that reference, so it is scored on facts, not confidence.</span></div>
     </div>
   </div>
 </section>
@@ -499,12 +499,14 @@
       const j = await r.json();
       if (!r.ok) { dcOut.innerHTML = `<span class="err">${esc(j.error || 'No answer')}</span>`; return; }
       if (j.verdict === 'not_assessed') { dcOut.innerHTML = tag + `<div class="big bad">Not assessed</div><div>${esc(j.reason)} Payment held.</div>`; return; }
-      const rows = (j.checks || []).map(k => `<tr><td>${esc(dcLabel(k.field))}</td><td data-l="Report says">${esc(k.claimed ?? 'not in report')}</td><td data-l="Register says">${esc(k.register ?? '')}</td><td data-l="Result" class="r-${esc(k.result)}">${esc(k.result)}</td></tr>`).join('');
+      const ordered = (j.checks || []).slice().sort((x, y) => (x.result === 'match') - (y.result === 'match'));
+      const nOk = ordered.filter(k => k.result === 'match').length;
+      const rows = ordered.map(k => `<tr><td>${esc(dcLabel(k.field))}</td><td data-l="Report says">${esc(k.claimed ?? 'not in report')}</td><td data-l="Register says">${esc(k.register ?? '')}</td><td data-l="Result" class="r-${esc(k.result)}">${esc(k.result)}</td></tr>`).join('');
       const pay = j.acp && j.acp.action === 'complete' ? 'Payment released to the provider.' : j.acp && j.acp.action === 'hold' ? 'Payment held until those claims are confirmed.' : 'Payment refunded to the buyer.';
       const short = { accept:'All required fields match the register.', reject_incorrect:'The report contradicts the register.', reject_incomplete:'Required fields are missing from the report.', hold_unchecked:'Every register field matches, but the report also states ' + ((j.not_checked || []).join(', ') || 'facts') + ', which the register cannot confirm.' }[j.verdict] || '';
       dcOut.innerHTML = tag + `<div class="big ${j.verdict === 'accept' ? 'ok' : j.verdict === 'hold_unchecked' ? '' : 'bad'}">${esc(dcNames[j.verdict] || j.verdict)}</div>`
         + `<div>${esc(short)} ${esc(pay)}</div>`
-        + `<details open><summary>See every field</summary><div class="tblwrap"><table><thead><tr><th>Field</th><th>Report says</th><th>Register says</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+        + `<details${j.verdict === 'accept' ? '' : ' open'}><summary>See every field (${nOk} of ${ordered.length} match)</summary><div class="tblwrap"><table><thead><tr><th>Field</th><th>Report says</th><th>Register says</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
     } catch (e) {
       dcOut.innerHTML = '<span class="err">Could not reach the checker. Try again.</span>';
     }
