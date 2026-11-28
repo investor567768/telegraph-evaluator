@@ -34,8 +34,24 @@ test('correct report is accepted: every required field matches', async () => {
   assert.equal(a.acp.action, 'complete');
   assert.equal(a.company.lei, 'W38RGI023J3WT1HWRP32');
   assert.deepEqual(a.checks.filter(c => c.required).map(c => c.result), Array(6).fill('match'));
-  assert.deepEqual(a.not_checked, ['Revenue']);
-  assert.match(a.reason, /Not checked.*Revenue/);
+  assert.deepEqual(a.not_checked, []);
+});
+
+test('a fabricated CEO the register cannot confirm holds payment instead of releasing it', async () => {
+  byName();
+  const a = await answer({ task: ORDER, result: read('report-unchecked.txt') });
+  assert.equal(a.verdict, 'hold_unchecked');
+  assert.equal(a.acp.action, 'hold');
+  assert.deepEqual(a.not_checked, ['CEO']);
+  assert.match(a.reason, /CEO.*cannot confirm/);
+  assert.deepEqual(a.checks.filter(c => c.required).map(c => c.result), Array(6).fill('match'));
+});
+
+test('a plain note that states no fact does not block payment', async () => {
+  byName();
+  const a = await answer({ task: ORDER, result: read('report-correct.txt') + 'Summary: Large German industrial group.\n' });
+  assert.equal(a.verdict, 'accept');
+  assert.equal(a.acp.action, 'complete');
 });
 
 test('incorrect report is rejected and names each wrong claim', async () => {
@@ -125,5 +141,6 @@ test('the demo link answers with the built-in order and report', async () => {
   assert.equal((await run({ sample: 'correct' })).out.verdict, 'accept');
   assert.equal((await run({ sample: 'incorrect' })).out.verdict, 'reject_incorrect');
   assert.equal((await run({ sample: 'incomplete' })).out.verdict, 'reject_incomplete');
+  assert.equal((await run({ sample: 'unchecked' })).out.verdict, 'hold_unchecked');
   assert.equal((await run({ sample: 'nope' })).code, 400);
 });

@@ -299,6 +299,7 @@
         <button type="button" class="chip" data-s="correct" aria-pressed="false">Correct report</button>
         <button type="button" class="chip" data-s="incorrect" aria-pressed="false">Wrong facts</button>
         <button type="button" class="chip" data-s="incomplete" aria-pressed="false">Missing fields</button>
+        <button type="button" class="chip" data-s="unchecked" aria-pressed="false">Unchecked claim</button>
         <button type="button" class="chip" data-own aria-pressed="false" aria-controls="dc-form">Check your own</button>
       </div>
       <form class="dcf" id="dc-form" hidden>
@@ -457,7 +458,8 @@
     e.preventDefault();
     const place = document.getElementById('wx-place').value.trim();
     run(API + '/api/truth/weather?location=' + encodeURIComponent(place) + '&date=' + encodeURIComponent(wxDate.value), document.getElementById('wx-out'),
-      j => `<div class="big">${esc(j.temp_max_c)}° / ${esc(j.temp_min_c)}°C · ${esc(j.precipitation_mm)} mm · ${esc(j.condition)}</div><div class="muted">${esc(j.location)} (${esc(j.latitude)}, ${esc(j.longitude)}) · ${esc(j.date)} · ${esc(j.data_source)}</div>`,
+      j => `<div class="big">${esc(j.temp_max_c)}° / ${esc(j.temp_min_c)}°C · ${esc(j.precipitation_mm)} mm · ${esc(j.condition)}</div><div class="muted">${esc(j.location)} (${esc(j.latitude)}, ${esc(j.longitude)}) · ${esc(j.date)} · ${esc(j.data_source)}</div>`
+        + (j.place_match && j.place_match.ambiguous ? `<div class="muted"><strong>More than one place has this name.</strong> Showing ${esc(j.place_match.used)}. Others: ${(j.place_match.other_places || []).map(o => esc(o.location)).join('; ')}. Add the country or region to choose, for example "Paris, France".</div>` : ''),
       e.submitter || e.target.querySelector('button'));
   });
   document.getElementById('tr-form').addEventListener('submit', e => {
@@ -484,7 +486,7 @@
 
   /* delivery check */
   const dcOut = document.getElementById('dc-out');
-  const dcNames = { accept:'Accepted', reject_incorrect:'Rejected: wrong facts', reject_incomplete:'Rejected: incomplete', not_assessed:'Not assessed' };
+  const dcNames = { accept:'Accepted', reject_incorrect:'Rejected: wrong facts', reject_incomplete:'Rejected: incomplete', hold_unchecked:'Held: claims not checked', not_assessed:'Not assessed' };
   const dcLabel = f => f === 'lei' ? 'LEI' : String(f).replace(/_/g, ' ');
   const dcChips = document.querySelectorAll('.dc .chip');
   const dcForm = document.getElementById('dc-form');
@@ -498,9 +500,9 @@
       if (!r.ok) { dcOut.innerHTML = `<span class="err">${esc(j.error || 'No answer')}</span>`; return; }
       if (j.verdict === 'not_assessed') { dcOut.innerHTML = tag + `<div class="big bad">Not assessed</div><div>${esc(j.reason)} Payment held.</div>`; return; }
       const rows = (j.checks || []).map(k => `<tr><td>${esc(dcLabel(k.field))}</td><td data-l="Report says">${esc(k.claimed ?? 'not in report')}</td><td data-l="Register says">${esc(k.register ?? '')}</td><td data-l="Result" class="r-${esc(k.result)}">${esc(k.result)}</td></tr>`).join('');
-      const pay = j.acp && j.acp.action === 'complete' ? 'Payment released to the provider.' : 'Payment refunded to the buyer.';
-      const short = { accept:'All required fields match the register.', reject_incorrect:'The report contradicts the register.', reject_incomplete:'Required fields are missing from the report.' }[j.verdict] || '';
-      dcOut.innerHTML = tag + `<div class="big ${j.verdict === 'accept' ? 'ok' : 'bad'}">${esc(dcNames[j.verdict] || j.verdict)}</div>`
+      const pay = j.acp && j.acp.action === 'complete' ? 'Payment released to the provider.' : j.acp && j.acp.action === 'hold' ? 'Payment held until those claims are confirmed.' : 'Payment refunded to the buyer.';
+      const short = { accept:'All required fields match the register.', reject_incorrect:'The report contradicts the register.', reject_incomplete:'Required fields are missing from the report.', hold_unchecked:'Every register field matches, but the report also states ' + ((j.not_checked || []).join(', ') || 'facts') + ', which the register cannot confirm.' }[j.verdict] || '';
+      dcOut.innerHTML = tag + `<div class="big ${j.verdict === 'accept' ? 'ok' : j.verdict === 'hold_unchecked' ? '' : 'bad'}">${esc(dcNames[j.verdict] || j.verdict)}</div>`
         + `<div>${esc(short)} ${esc(pay)}</div>`
         + `<details open><summary>See every field</summary><div class="tblwrap"><table><thead><tr><th>Field</th><th>Report says</th><th>Register says</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
     } catch (e) {

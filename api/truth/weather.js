@@ -44,17 +44,39 @@ async function getJson(url, who) {
   return body;
 }
 
-function parseDate(raw, now = new Date()) {
+// Today's date at a place, as YYYY-MM-DD, or null when the time zone is unknown.
+function localDay(now, tz) {
+  if (!tz) return null;
+  try {
+    const s = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+  } catch { return null; }
+}
+
+function checkFormat(raw) {
   const s = String(raw || '').trim();
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) throw new AnswerError(400, 'date is required as YYYY-MM-DD, for example 2026-11-19.');
   const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
   if (isNaN(d) || d.toISOString().slice(0, 10) !== `${m[1]}-${m[2]}-${m[3]}`) throw new AnswerError(400, `"${s}" is not a real date.`);
-  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  if (d >= today) throw new AnswerError(400, `${m[0]} has not finished yet. This source answers what was observed on a past day.`);
   if (d < new Date(Date.UTC(1940, 0, 1))) throw new AnswerError(404, 'Records start in 1940.');
-  return { iso: m[0], ageDays: Math.round((today - d) / 86400000) };
+  return { m, d };
 }
+
+// A day is finished only when it has ended where the place is, not in UTC. Without a time zone the
+// check falls back to the UTC date.
+function parseDate(raw, now = new Date(), tz = null) {
+  const { m, d } = checkFormat(raw);
+  const local = localDay(now, tz);
+  const todayIso = local || now.toISOString().slice(0, 10);
+  const today = new Date(`${todayIso}T00:00:00Z`);
+  if (d >= today) throw new AnswerError(400, local
+    ? `${m[0]} has not finished yet in ${tz} (the local date there is ${local}). This source answers what was observed on a past day.`
+    : `${m[0]} has not finished yet. This source answers what was observed on a past day.`);
+  return { iso: m[0], ageDays: Math.round((today - d) / 86400000), local_today: todayIso, timezone: local ? tz : 'UTC' };
+}
+
+const placeLabel = p => [p.name, p.admin1 !== p.name ? p.admin1 : null, p.country].filter(Boolean).join(', ');
 
 async function resolvePlace(raw) {
   const text = String(raw || '').trim();
@@ -68,14 +90,25 @@ async function resolvePlace(raw) {
     if (narrowed.length) list = narrowed;
   }
   if (!list.length) throw new AnswerError(404, `Could not find a place called "${text}". Add the country, for example "${name}, Portugal".`);
-  return list[0];
+  // Different places that share the name (different country or region). Never pick one silently.
+  const seen = new Set(), distinct = [];
+  for (const p of list) { const k = `${p.country_code}|${p.admin1}`; if (!seen.has(k)) { seen.add(k); distinct.push(p); } }
+  return { place: list[0], ambiguous: distinct.length > 1,
+    others: distinct.slice(1, 6).map(p => ({ location: placeLabel(p), latitude: p.latitude, longitude: p.longitude })) };
 }
 
 async function answer(params, now = new Date()) {
-  const { iso, ageDays } = parseDate(params.date, now);
-  const place = await resolvePlace(params.location || params.place || params.city);
+  const { m } = checkFormat(params.date);
+  const horizon = new Date(now.getTime() + 14 * 3600e3).toISOString().slice(0, 10); // the furthest-ahead clock on earth
+  if (m[0] >= horizon) throw new AnswerError(400, `${m[0]} has not finished yet anywhere. This source answers what was observed on a past day.`);
+  const { place, ambiguous, others } = await resolvePlace(params.location || params.place || params.city);
+  const { iso, ageDays } = parseDate(params.date, now, place.timezone);
+  const place_match = ambiguous
+    ? { ambiguous: true, used: placeLabel(place), other_places: others,
+        note: 'More than one place has this name. The first match from the place search was used. Add the country or region to choose, for example "Paris, France".' }
+    : { ambiguous: false };
   const key = `${place.latitude},${place.longitude},${iso}`;
-  if (cache.has(key)) return cache.get(key);
+  if (cache.has(key)) return { ...cache.get(key), place_match };
 
   const archive = ageDays > RECENT_DAYS;
   const url = (archive ? ARCHIVE : RECENT)(place.latitude, place.longitude, iso);
@@ -86,7 +119,7 @@ async function answer(params, now = new Date()) {
   if (tmax === null || tmax === undefined) throw new AnswerError(404, `No observed values yet for ${iso}${archive ? ' (the archive runs about 5 days behind)' : ''}.`);
 
   const value = {
-    location: [place.name, place.admin1 !== place.name ? place.admin1 : null, place.country].filter(Boolean).join(', '),
+    location: placeLabel(place),
     latitude: place.latitude,
     longitude: place.longitude,
     date: iso,
@@ -101,7 +134,7 @@ async function answer(params, now = new Date()) {
     checked_at: new Date().toISOString(),
   };
   cache.set(key, value);
-  return value;
+  return { ...value, place_match };
 }
 
 export default async function handler(req, res) {

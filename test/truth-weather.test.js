@@ -68,3 +68,41 @@ test('unknown place and missing values are errors, not guesses', async () => {
   mockFetch([['geocoding-api', json(GEO_LAGOS)], ['api.open-meteo.com', json({ daily: { temperature_2m_max: [null] } })]]);
   await assert.rejects(answer({ location: 'Lagos', date: '2026-11-18' }, NOW), e => e.status === 404);
 });
+
+test('a day is finished where the place is, not in UTC: Auckland already ended 28 Nov at 11:37Z', async () => {
+  cache.clear();
+  const AKL = { results: [{ name: 'Auckland', latitude: -36.84853, longitude: 174.76349, country: 'New Zealand', country_code: 'NZ', admin1: 'Auckland', timezone: 'Pacific/Auckland' }] };
+  mockFetch([['geocoding-api', json(AKL)], ['api.open-meteo.com/v1/forecast', json({ timezone: 'Pacific/Auckland', daily: { time: ['2026-11-28'], temperature_2m_max: [19], temperature_2m_min: [12], precipitation_sum: [0.4], weather_code: [3] } })]]);
+  const a = await answer({ location: 'Auckland', date: '2026-11-28' }, new Date('2026-11-28T11:37:00Z'));
+  assert.equal(a.date, '2026-11-28');
+  assert.equal(a.temp_max_c, 19);
+});
+
+test('and the other way round: Honolulu has not finished 27 Nov at 02:00Z on 28 Nov', async () => {
+  cache.clear();
+  const HNL = { results: [{ name: 'Honolulu', latitude: 21.30694, longitude: -157.85833, country: 'United States', country_code: 'US', admin1: 'Hawaii', timezone: 'Pacific/Honolulu' }] };
+  mockFetch([['geocoding-api', json(HNL)]]);
+  await assert.rejects(() => answer({ location: 'Honolulu', date: '2026-11-27' }, new Date('2026-11-28T02:00:00Z')), /has not finished yet in Pacific\/Honolulu/);
+});
+
+test('a date that is not finished anywhere is refused before any lookup', async () => {
+  cache.clear();
+  mockFetch([]);
+  await assert.rejects(() => answer({ location: 'Auckland', date: '2026-11-30' }, new Date('2026-11-28T11:37:00Z')), /has not finished yet anywhere/);
+  assert.equal(calls.length, 0);
+});
+
+test('an ambiguous name is flagged with the other places, never picked silently', async () => {
+  cache.clear();
+  const PARIS = { results: [
+    { name: 'Paris', latitude: 48.85341, longitude: 2.3488, country: 'France', country_code: 'FR', admin1: 'Ile-de-France', timezone: 'Europe/Paris' },
+    { name: 'Paris', latitude: 33.66094, longitude: -95.55551, country: 'United States', country_code: 'US', admin1: 'Texas', timezone: 'America/Chicago' },
+  ] };
+  mockFetch([['geocoding-api', json(PARIS)], ['api.open-meteo.com/v1/forecast', json({ timezone: 'Europe/Paris', daily: { time: ['2026-11-19'], temperature_2m_max: [9], temperature_2m_min: [4], precipitation_sum: [0], weather_code: [3] } })]]);
+  const a = await answer({ location: 'Paris', date: '2026-11-19' }, NOW);
+  assert.equal(a.place_match.ambiguous, true);
+  assert.match(a.place_match.used, /France/);
+  assert.match(a.place_match.other_places[0].location, /Texas/);
+  const b = await answer({ location: 'Paris, France', date: '2026-11-19' }, NOW);
+  assert.equal(b.place_match.ambiguous, false);
+});

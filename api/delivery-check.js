@@ -11,13 +11,17 @@
 //   accept             every required field is present and every checkable claim matches the register
 //   reject_incorrect   at least one claim contradicts the register (field, claim and register value shown)
 //   reject_incomplete  nothing contradicts the register, but required fields are missing
-// ACP mapping: accept -> complete (pay the provider); either reject -> reject (refund the buyer).
+//   hold_unchecked     the register fields all match, but the report also states facts the register cannot confirm
+//                      (a CEO, revenue, employees, owners...). Payment is held, not released.
+// ACP mapping: accept -> complete (pay the provider); either reject -> reject (refund the buyer);
+// hold_unchecked -> hold (do not pay until the unchecked claims are confirmed another way).
 // This is the evaluator decision in Virtuals' Agent Commerce Protocol (ERC-8183): one evaluator
 // alone completes or rejects a submitted job. This code runs as a sandbox evaluator; it is not
 // registered as an evaluator address on Virtuals.
 //
 // Fields the register cannot confirm (revenue, CEO, employees, tax ID...) are listed as `not_checked`,
-// never counted as right or wrong.
+// never counted as right or wrong. But a report that states such a fact cannot be paid as if it were
+// verified: the job is held (hold_unchecked) instead of accepted.
 
 const UA = { 'user-agent': 'telegraph-evaluator/1.0 (+https://github.com/investor567768/telegraph-evaluator)', accept: 'application/vnd.api+json, application/json' };
 const GLEIF_LEI = lei => `https://api.gleif.org/api/v1/lei-records/${lei}`;
@@ -41,6 +45,8 @@ const ALIASES = {
   registered_address: ['registered address', 'legal address', 'registered office', 'address'],
   headquarters_address: ['headquarters address', 'headquarters', 'hq address', 'hq', 'head office'],
 };
+// Report keys that state a fact about the company which the register cannot confirm.
+const FACT_KEY = /\b(ceo|chief|executive|founder|owner|owners|ownership|director|directors|board|shareholder|shareholders|subsidiar\w*|revenue|turnover|profit|income|employee|employees|headcount|staff|tax|vat|ein|duns|valuation|market cap|funding|rating)\b/i;
 const ALIAS_LIST = Object.entries(ALIASES).flatMap(([f, ws]) => ws.map(w => [w, f])).sort((a, b) => b[0].length - a[0].length);
 
 const COUNTRIES = { germany: 'DE', deutschland: 'DE', 'united kingdom': 'GB', uk: 'GB', 'great britain': 'GB', england: 'GB', 'united states': 'US', usa: 'US', 'united states of america': 'US', france: 'FR', sweden: 'SE', netherlands: 'NL', 'the netherlands': 'NL', japan: 'JP', china: 'CN', nigeria: 'NG', switzerland: 'CH', italy: 'IT', spain: 'ES', ireland: 'IE', india: 'IN', canada: 'CA', denmark: 'DK', norway: 'NO', finland: 'FI', austria: 'AT', belgium: 'BE', luxembourg: 'LU', singapore: 'SG', 'hong kong': 'HK', 'south korea': 'KR', korea: 'KR', taiwan: 'TW', australia: 'AU', brazil: 'BR' };
@@ -246,17 +252,22 @@ async function answer(params) {
     reason = `All ${matched} required fields are present and match the GLEIF register for ${reg.legal_name} (LEI ${reg.lei}).`;
   }
   const unchecked = Object.keys(extra);
-  if (unchecked.length) reason += ` Not checked, because the register does not hold them: ${unchecked.join(', ')}.`;
+  const unverified = unchecked.filter(k => FACT_KEY.test(k));
+  if (verdict === 'accept' && unverified.length) {
+    verdict = 'hold_unchecked';
+    reason = `All ${matched} required fields are present and match the GLEIF register for ${reg.legal_name} (LEI ${reg.lei}), but the report also states ${unverified.join(', ')}, which the register cannot confirm. Payment is held until those claims are confirmed another way.`;
+  } else if (unchecked.length) reason += ` Not checked, because the register does not hold them: ${unchecked.join(', ')}.`;
 
   return {
     verdict, score, reason,
     acp: verdict === 'accept' ? { action: 'complete', reason: 'Deliverable meets the order; release payment to the provider.' }
+      : verdict === 'hold_unchecked' ? { action: 'hold', reason: `The report states facts this evaluator cannot check (${unverified.join(', ')}). Confirm them before releasing payment.` }
       : { action: 'reject', reason: verdict === 'reject_incorrect' ? 'Deliverable contains claims the public register contradicts; refund the buyer.' : 'Deliverable is missing required parts of the order; refund the buyer or ask for a corrected delivery.' },
     intent: 'TASK_EXECUTION_QUALITY_GENERAL',
     company: { legal_name: reg.legal_name, lei: reg.lei },
     order, checks, not_checked: unchecked, checked_at,
     sources: { register: GLEIF_LEI(reg.lei) },
-    method: 'The company is identified from the order, never from the report. Each claim is compared with its GLEIF record field by field. Any contradiction rejects the job as incorrect; otherwise any missing required field rejects it as incomplete; otherwise it is accepted. Claims GLEIF cannot confirm are listed as not checked.',
+    method: 'The company is identified from the order, never from the report. Each claim is compared with its GLEIF record field by field. Any contradiction rejects the job as incorrect; otherwise any missing required field rejects it as incomplete; otherwise it is accepted. Claims GLEIF cannot confirm are listed as not checked, and a report that states facts of that kind (for example a CEO or revenue) is held rather than paid.',
     mode: 'sandbox evaluator: same complete/reject decision as an ACP evaluator, not registered on Virtuals',
   };
 }
@@ -264,8 +275,9 @@ async function answer(params) {
 // --- Built-in demo: one order, three reports (try ?sample=correct, ?sample=incorrect, ?sample=incomplete) ---
 export const SAMPLE_ORDER = {"company": "Siemens Aktiengesellschaft", "required": ["legal_name", "lei", "registration_number", "jurisdiction", "entity_status", "registered_address"]};
 export const SAMPLES = {
-  "correct": "Due diligence report: Siemens AG\nLegal name: Siemens Aktiengesellschaft\nLEI: W38RGI023J3WT1HWRP32\nRegistration number: HRB 6684 (Amtsgericht München)\nJurisdiction: Germany\nStatus: Active\nRegistered address: Werner-von-Siemens-Straße 1, 80333 Munich, Germany\nRevenue: EUR 75.9 billion (FY2024)\n",
+  "correct": "Due diligence report: Siemens AG\nLegal name: Siemens Aktiengesellschaft\nLEI: W38RGI023J3WT1HWRP32\nRegistration number: HRB 6684 (Amtsgericht München)\nJurisdiction: Germany\nStatus: Active\nRegistered address: Werner-von-Siemens-Straße 1, 80333 Munich, Germany\n",
   "incorrect": "Due diligence report: Siemens AG\nLegal name: Siemens AG\nLEI: W38RGI023J3WT1HWRP32\nRegistration number: W38RGI023J3WT1HWRP32\nJurisdiction: Germany\nStatus: Active\nRegistered address: Nonnendammallee 101, 13629 Berlin, Germany\n",
+  "unchecked": "Due diligence report: Siemens AG\nLegal name: Siemens Aktiengesellschaft\nLEI: W38RGI023J3WT1HWRP32\nRegistration number: HRB 6684 (Amtsgericht München)\nJurisdiction: Germany\nStatus: Active\nRegistered address: Werner-von-Siemens-Straße 1, 80333 Munich, Germany\nCEO: Jane Doe\n",
   "incomplete": "Due diligence report: Siemens AG\nLegal name: Siemens Aktiengesellschaft\nLEI: W38RGI023J3WT1HWRP32\nJurisdiction: DE\nSummary: Large German industrial group, listed in Frankfurt.\n"
 };
 
@@ -286,7 +298,7 @@ export default async function handler(req, res) {
   }
   try {
     if (params.sample) {
-      if (!SAMPLES[params.sample]) throw new AnswerError(400, 'sample must be correct, incorrect or incomplete.');
+      if (!SAMPLES[params.sample]) throw new AnswerError(400, 'sample must be correct, incorrect, incomplete or unchecked.');
       params = { task: SAMPLE_ORDER, result: SAMPLES[params.sample] };
     }
     const out = await answer(params);
