@@ -82,7 +82,7 @@ Open the [seller-check page](https://investor567768.github.io/telegraph-evaluato
 | 18 Nov 2026 | [Telegraph Discord #feedback](https://discord.com/channels/1438396125609463881/1572623052196544652/1572623052196544652) | Routing: routed answers differ from the miner's direct answers ([ROUTING-EXAMPLES.md](ROUTING-EXAMPLES.md)) |
 | 18 Nov 2026 | [Telegraph Discord #feedback](https://discord.com/channels/1438396125609463881/1572649494619623606/1572649494619623606) | FX_NOW_EUR ranking findings; public correction posted 19 Nov |
 | 19 Nov 2026 | [X](https://x.com/kingChrys494/status/2123346766846206144), [Discord #showcase](https://discord.com/channels/1438396125609463881/1572225959656947774/1572907047811420281) | 3-minute demo video |
-| 28 Nov 2026 | [X](https://x.com/kingChrys494/status/2126620061179769134) | Update with a 30-second clip: truth sources grew from 9 to 13 Intents (all 15 of 15 missions), live FAA airport status, Finnish port arrivals and datacenter telemetry pairs added, how-it-works section and a menu for phones |
+| 28 Nov 2026 | [X](https://x.com/kingChrys494/status/2126620061179769134), [Discord #showcase](https://discord.com/channels/1438396125609463881/1572225959656947774/1576180529160786060) | Update with a 30-second clip: truth sources grew from 9 to 13 Intents (all 15 of 15 missions), live FAA airport status, Finnish port arrivals and datacenter telemetry pairs added, how-it-works section and a menu for phones. The Discord post invites independent testing |
 
 Tutorial: [How to add a truth source to Telegraph in 15 minutes](TUTORIAL.md).
 
